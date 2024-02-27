@@ -1,0 +1,44 @@
+[
+    {
+        "item": "Passport",
+        "quantity": 1,
+        "category": "Essentials",
+        "luggage": "Shoulder bag",
+        "packed": 0
+    },
+    {
+        "item": "T-shirt",
+        "quantity": 2,
+        "category": "Clothing",
+        "luggage": "Red suitcase",
+        "packed": 0
+    },
+    {
+        "item": "Socks",
+        "quantity": 7,
+        "category": "Clothing",
+        "luggage": "Red suitcase",
+        "packed": 0
+    },
+    {
+        "item": "Camera",
+        "quantity": 1,
+        "category": "Photography",
+        "luggage": "Shoulder bag",
+        "packed": 0
+    },
+    {
+        "item": "Tripod",
+        "quantity": 1,
+        "category": "Photography",
+        "luggage": "Red suitcase",
+        "packed": 0
+    },
+    {
+        "item": "Phone",
+        "quantity": 1,
+        "category": "Essentials",
+        "luggage": "On person",
+        "packed": 0
+    }
+]
