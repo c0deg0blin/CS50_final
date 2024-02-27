@@ -15,7 +15,7 @@
     },
     {
         "item": "Socks",
-        "quantity": 7,
+        "quantity": 7 ,
         "category": "Clothing",
         "luggage": "Red suitcase",
         "packed": 0
