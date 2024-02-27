@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+
+{% extends "layout.html" %}
+
+{% block title %}
+Main
+{% endblock %}
+
+{% block main %}
+    <body>
+        <div>
+            <h1>TripPacker</h1>
+        </div>
+        <div>
+            <table>
+                <thead>
+                    <tr>
+                        {% for column_name in column_names %}
+                            <th>{{ column_name }}</th>
+                        {% endfor %}
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for row in rows %}
+                        <tr>
+                            {% for key in row %}
+                                <td>{{ row[key] }}</td>
+                            {% endfor %}
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </body>
+{% endblock %}
