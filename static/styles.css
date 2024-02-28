@@ -83,7 +83,7 @@ table th::first-letter {
 }
 
 
-/* tbody tr:nth-of-type(odd) {
-    background-color: rgb(179, 208, 255, 0.3)
-} */
-
+/* Hide the entire column */
+.hidden_col {
+    display: none;
+}

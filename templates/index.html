@@ -15,24 +15,34 @@ Main
             <table>
                 <thead>
                     <tr>
+
                         {% for column_name in column_names %}
-                            <th>{{ column_name }}</th>
+                            {% if column_name.lower() == "id" %}
+                                <th class="hidden_col">{{ column_name }}</th>
+                            {% else %}
+                                <th>{{ column_name }}</th>
+                            {% endif %}
                         {% endfor %}
                     </tr>
                 </thead>
                 <tbody>
-                    {% for row in rows %}
-                        <tr>
-                            {% for key in row %}
-                                {% if key.lower() == "packed" %}
-                                    <td> <input type="checkbox" id="vehicle1" name="vehicle1" value="Bike"> </td>
-                                    <!-- <td>{{ row[key] }}</td> -->
-                                {% else %}
-                                    <td>{{ row[key] }}</td>
-                                {% endif %}
-                            {% endfor %}
-                        </tr>
-                    {% endfor %}
+                    <form action = "/" method="post">
+                        {% for row in rows %}
+                            <tr>
+                                {% for key in row %}
+                                    {% if key.lower() == "id" %}
+                                        <!-- <td> <input type="hidden" name="id" value="{{ row[key] }}"> </td> -->
+                                        <td class="hidden_col">{{ row[key] }}</td>
+                                    {% elif key.lower() == "packed" %}
+                                        <td> <input type="checkbox"> </td>
+                                        <!-- <td>{{ row[key] }}</td> -->
+                                    {% else %}
+                                        <td>{{ row[key] }}</td>
+                                    {% endif %}
+                                {% endfor %}
+                            </tr>
+                        {% endfor %}
+                    </form>
                 </tbody>
             </table>
         </div>

@@ -53,11 +53,12 @@ def create_database(db_name):
         db.execute(
             """
             CREATE TABLE IF NOT EXISTS packingList (
-                item TEXT,
-                quantity INTEGER,
-                category TEXT,
-                luggage TEXT,
-                packed INTEGER
+                id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, 
+                item TEXT NOT NULL,
+                quantity INTEGER NOT NULL,
+                category TEXT NOT NULL,
+                luggage TEXT NOT NULL,
+                packed INTEGER NOT NULL
             );
             """
         )
