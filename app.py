@@ -75,7 +75,7 @@ app.config["TEMPLATES_AUTO_RELOAD"] = True
 db = create_database(DB_NAME)
 
 
-@app.route("/")
+@app.route("/", methods=["GET", "POST"])
 def index():
     # Get all rows from the table
     rows = db.execute("SELECT * FROM packingList;")

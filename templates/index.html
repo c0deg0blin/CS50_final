@@ -24,7 +24,12 @@ Main
                     {% for row in rows %}
                         <tr>
                             {% for key in row %}
-                                <td>{{ row[key] }}</td>
+                                {% if key.lower() == "packed" %}
+                                    <td> <input type="checkbox" id="vehicle1" name="vehicle1" value="Bike"> </td>
+                                    <!-- <td>{{ row[key] }}</td> -->
+                                {% else %}
+                                    <td>{{ row[key] }}</td>
+                                {% endif %}
                             {% endfor %}
                         </tr>
                     {% endfor %}
