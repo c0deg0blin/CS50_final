@@ -1,8 +1,9 @@
 
 import os
-# from cs50 import SQL
-import sqlite3
-from flask import Flask, flash, jsonify, redirect, render_template, request, session, g
+# from readline import insert_text
+from cs50 import SQL
+# from flask import Flask, render_template
+from flask import Flask, flash, jsonify, redirect, render_template, request, session
 import json
 
 DB_NAME = "TripPacker"
@@ -21,17 +22,16 @@ def insert_tmp_data(db):
 
     # Execute the statement for each item
     for d in tmp_packingList:
-        db.execute(insert_stmt, (
-                d["item"],
-                d["quantity"],
-                d["category"],
-                d["luggage"],
-                d["packed"]
-            )
+        db.execute(insert_stmt, 
+            d["item"],
+            d["quantity"],
+            d["category"],
+            d["luggage"],
+            d["packed"]
         )
 
 
-def db_connect(db_name):
+def create_database(db_name):
     """
     Connect to the SQLite database. Also, create the database
     file if it doesn't already exist.
@@ -44,8 +44,7 @@ def db_connect(db_name):
         open(f"{db_name}.db", "w").close()
         
     # Connect to SQLite database
-    conn = sqlite3.connect(f"{db_name}.db")
-    db = conn.cursor()
+    db = SQL(f"sqlite:///{db_name}.db")
     
     # If the db file is new, create the packing
     # list table, empty.
@@ -64,9 +63,8 @@ def db_connect(db_name):
             """
         )
         insert_tmp_data(db)
-        db.commit()
     
-    return conn, db
+    return db
 
 # Configure application
 app = Flask(__name__)
@@ -74,16 +72,8 @@ app = Flask(__name__)
 # Ensure templates are auto-reloaded
 app.config["TEMPLATES_AUTO_RELOAD"] = True
 
-
-@app.before_request
-def before_request():
-    g.conn, g.db = db_connect(DB_NAME)
-    
-    
-@app.teardown_appcontext
-def teardown_request(exception):
-    if hasattr(g, "db"):
-        g.db.close()
+# Connect to SQLite database
+db = create_database(DB_NAME)
 
 
 @app.route("/", methods=["GET", "POST"])
@@ -101,24 +91,14 @@ def index():
         print("GET TRIGGERED")
         print("==========================")
         # Get all rows from the table
-        g.db.execute("SELECT * FROM packingList;")
-        # Fetch all rows returned by the last query result
-        row_list = g.db.fetchall()
+        rows = db.execute("SELECT * FROM packingList;")
         
-        # Get the column names ("db.description" provides the column names
-        # of the last select query as a list of tuples where the first item
-        # is the column name)
-        column_names = [description[0] for description in g.db.description]
-        
-        # Stores rows as list of dictionaries, for easier management in HTML
-        rows = []
-        for row in row_list:
-            i = 0
-            tmp_dict = {}
-            while i < len(column_names):
-                tmp_dict[column_names[i]] = row[i]
-                i += 1
-            rows.append(tmp_dict)
-        
-        return render_template("index.html", column_names=column_names, rows=rows)
-        
+        # Check if there are any rows returned
+        if len(rows) > 0:
+            # Get the column names
+            column_names = rows[0].keys()
+        else:
+            column_names = []
+        return render_template("index.html",
+                           column_names=column_names,
+                           rows=rows)

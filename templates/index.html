@@ -1,5 +1,3 @@
-<!DOCTYPE html>
-
 {% extends "layout.html" %}
 
 {% block title %}
@@ -7,44 +5,51 @@ Main
 {% endblock %}
 
 {% block main %}
-    <body>
-        <div>
-            <h1>TripPacker</h1>
-        </div>
-        <div>
-            <table>
-                <thead>
-                    <tr>
-
-                        {% for column_name in column_names %}
-                            {% if column_name.lower() == "id" %}
-                                <th class="hidden_col">{{ column_name }}</th>
-                            {% else %}
-                                <th>{{ column_name }}</th>
-                            {% endif %}
-                        {% endfor %}
-                    </tr>
-                </thead>
-                <tbody>
-                    <form action = "/" method="post">
-                        {% for row in rows %}
-                            <tr>
-                                {% for key in row %}
-                                    {% if key.lower() == "id" %}
-                                        <!-- <td> <input type="hidden" name="id" value="{{ row[key] }}"> </td> -->
-                                        <td class="hidden_col">{{ row[key] }}</td>
-                                    {% elif key.lower() == "packed" %}
-                                        <td> <input type="checkbox"> </td>
-                                        <!-- <td>{{ row[key] }}</td> -->
-                                    {% else %}
-                                        <td>{{ row[key] }}</td>
-                                    {% endif %}
-                                {% endfor %}
-                            </tr>
-                        {% endfor %}
-                    </form>
-                </tbody>
-            </table>
-        </div>
-    </body>
+<div>
+    <h1>TripPacker</h1>
+    <table>
+        <thead>
+            <tr>
+                {% for column_name in column_names %}
+                    {% if column_name.lower() == "id" %}
+                        <th class="hidden_col">{{ column_name }}</th>
+                    {% else %}
+                        <th>{{ column_name }}</th>
+                    {% endif %}
+                {% endfor %}
+            </tr>
+        </thead>
+        <tbody>
+            {% for row in rows %}
+                <!--  The loop.index attribute assigns the current row
+                    index (1-based) to each <tr> element. -->
+                <tr data-row="{{ loop.index }}">
+                    {% for key in row %}
+                        {% if key.lower() == "id" %}
+                            <td class="hidden_col">{{ row[key] }}</td>
+                        {% elif key.lower() == "packed" %}
+                            <form action="/" method="post">
+                                <td> <input type="checkbox" class="packed_cb"> </td>
+                            </form>
+                        {% else %}
+                            <td>{{ row[key] }}</td>
+                        {% endif %}
+                    {% endfor %}
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    <script>
+        $(document).ready(function() {
+            $('.packed_cb').change(function() {
+                const isChecked = $(this).prop('checked');
+                const rowNumber = $(this).closest('tr').data('row');
+                const idValue = $(this).closest('tr').find('td.hidden_col').text(); // Assuming the class is "hidden_col"
+                
+                if (isChecked) {
+                    console.log(`Checkbox in row ${rowNumber} is checked. ID value: ${idValue}`)
+                }
+            });
+        });
+    </script>
 {% endblock %}
