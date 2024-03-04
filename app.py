@@ -2,6 +2,7 @@
 import os
 # from cs50 import SQL
 import sqlite3
+from struct import pack
 from flask import Flask, flash, jsonify, redirect, render_template, request, session, g
 import json
 
@@ -64,7 +65,7 @@ def db_connect(db_name):
             """
         )
         insert_tmp_data(db)
-        db.commit()
+        # db.commit()
     
     return conn, db
 
@@ -84,22 +85,44 @@ def before_request():
 def teardown_request(exception):
     if hasattr(g, "db"):
         g.db.close()
-
+        
 
 @app.route("/", methods=["GET", "POST"])
 def index():
-    
     if request.method == "POST":
-        print("==========================")
-        print("POST TRIGGERED")
-        print("==========================")
-        row_number = request.form.get('row')
-        print(row_number)
-        return redirect("/")
+        print("======")
+        print("<POST>")
+        print("======")
+        id_value = request.form.get('idValue')
+        checked_val = request.form.get('isChecked')
+        print("==============")
+        print(checked_val)
+        print(id_value)
+        print("==============")
+        return jsonify(message="Checkbox ID received successfully")
+        
+        # Update database with new checkbox state
+        # g.db.execute(
+        #     """
+        #     UPDATE packingList
+        #     SET packed = ?
+        #     WHERE id = ?;
+        #     """,
+        #     (packed_val,
+        #      id)
+        # )
+            
+        # if packed_val:
+        #     print("Checked")
+        # else:
+        #     print("Unchecked")
+        # row_number = request.form.get('row')
+        # print(row_number)
+        # return redirect("/")
     else:
-        print("==========================")
-        print("GET TRIGGERED")
-        print("==========================")
+        print("===")
+        print("GET")
+        print("===")
         # Get all rows from the table
         g.db.execute("SELECT * FROM packingList;")
         # Fetch all rows returned by the last query result
@@ -121,4 +144,3 @@ def index():
             rows.append(tmp_dict)
         
         return render_template("index.html", column_names=column_names, rows=rows)
-        

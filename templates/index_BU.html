@@ -28,12 +28,9 @@ Main
                         {% if key.lower() == "id" %}
                             <td class="hidden_col">{{ row[key] }}</td>
                         {% elif key.lower() == "packed" %}
-                            <!-- <form action="/" method="post"> -->
-                                <td>
-                                    <!-- <input onChange="this.form.submit()" type="checkbox" class="packed_cb" name="packed_{{ row['id'] }}"> -->
-                                    <input type="checkbox" class="packed_cb" name="packed_{{ row['id'] }}">
-                                </td>
-                            <!-- </form> -->
+                            <form action="/" method="post">
+                                <td> <input type="checkbox" class="packed_cb" name="packed" value="on"> </td>
+                            </form>
                         {% else %}
                             <td>{{ row[key] }}</td>
                         {% endif %}
@@ -51,24 +48,7 @@ Main
                 
                 if (isChecked) {
                     console.log(`Checkbox in row ${rowNumber} is checked. ID value: ${idValue}`)
-                    $("#formName").submit();
                 }
-                else {
-                    console.log(`Checkbox in row ${rowNumber} is unchecked. ID value: ${idValue}`)
-                    $("#formName").submit();
-                }
-                // Send AJAX request to Python backend
-                $.ajax({
-                    type: "POST",
-                    url: "/",
-                    data: {idValue: idValue, isChecked: isChecked},
-                    success: function(response) {
-                        console.log("Server response:", response);
-                    },
-                    error:  function(error) {
-                        console.error("Error sending AJAX request:", error);
-                    }
-                });
             });
         });
     </script>
