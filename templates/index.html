@@ -93,10 +93,9 @@ Main
                     // Clear the existing table body
                     $("tbody").empty();
 
+                    console.log(response);
                     // Iterate over each row
-                    console.log("CATEGORIES:")
-                    console.log(response["categories"]);
-                    $.each(response["data"], function(d_idx, row) {
+                    $.each(response["rows"], function(d_idx, row) {
                         // Create empty row
                         var tr = $("<tr>").attr("data-row", d_idx + 1);
                         

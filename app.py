@@ -104,7 +104,6 @@ app = Flask(__name__)
 # Ensure templates are auto-reloaded
 app.config['TEMPLATES_AUTO_RELOAD'] = True
 
-
 # Before every request, connect to database and store
 # the connection and database objects (they are
 # globally accessible).
@@ -156,7 +155,6 @@ def index():
             INSERT INTO {PACKLIST} (item, quantity, category, luggage, packed)
             VALUES(?, ?, ?, ?, ?)
             '''
-
             # Execute the statement
             g.db.execute(insert_stmt, (
                     item_name,
@@ -206,6 +204,7 @@ def index():
                            checked=checked,
                            rows=rows)
 
+
 # Get table data from database to update web app
 @app.route('/get_table_data', methods=['GET'])
 def get_table_data():
@@ -228,10 +227,10 @@ def get_table_data():
     # Combine headers and rows into a list of dictionaries.
     # Each dictionary is a row, where each key is the header
     # and each value is the cell data.
-    data = [dict(zip(headers, row)) for row in rows]
+    rows_dict = [dict(zip(headers, row)) for row in rows]
     
     response = {
-        "data": data,
+        "rows": rows_dict,
         "categories": categories
     }
 
