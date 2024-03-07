@@ -8,6 +8,7 @@ import json
 
 DB_NAME = 'TripPacker'
 PACKLIST = 'packingList'
+CATLIST = 'categories'
 
 def insert_tmp_data(conn):
     
@@ -21,7 +22,7 @@ def insert_tmp_data(conn):
     VALUES(?, ?, ?, ?, ?)
     '''
 
-    print('Inserting temp packig data...')
+    print('Inserting temp packing list data...')
     # Execute the statement for each item
     db = conn.cursor()
     for d in tmp_packingList:
@@ -30,9 +31,24 @@ def insert_tmp_data(conn):
                 d['quantity'],
                 d['category'],
                 d['luggage'],
-                d['packed']
+                d['packed'],
             )
         )
+        
+    conn.commit()
+    
+    # Load template category list from json
+    with open('static/categoryList_template.json', 'r') as f:
+        tmp_catList = json.load(f)
+
+    # Prepare the insert statement
+    insert_stmt = f'INSERT INTO {CATLIST} (category) VALUES(?)'
+
+    print('Inserting temp category list data...')
+    # Execute the statement for each item
+    db = conn.cursor()
+    for d in tmp_catList:
+        db.execute(insert_stmt, (d['category'],))
         
     conn.commit()
 
@@ -55,13 +71,12 @@ def db_connect(db_name):
     conn = sqlite3.connect(f'{db_name}.db')
     db = conn.cursor()
     
-    # If the db file is new, create the packing
-    # list table, empty.
+    # If the db file is new, create the tables (empty)
     if not db_exists:
         db.execute(
             f'''
             CREATE TABLE IF NOT EXISTS {PACKLIST} (
-                id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, 
+                id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL UNIQUE,
                 item TEXT NOT NULL,
                 quantity INTEGER NOT NULL,
                 category TEXT NOT NULL,
@@ -70,6 +85,14 @@ def db_connect(db_name):
             );
             '''
         )
+        db.execute(
+            f'''
+            CREATE TABLE IF NOT EXISTS {CATLIST} (
+                category TEXT NOT NULL UNIQUE
+            );
+            '''
+        )
+        
         # TMP: Pre-populate table for testing purposes
         insert_tmp_data(conn)
     
@@ -125,7 +148,9 @@ def index():
         
             return jsonify('Table update source: checkbox')
         # Add button action
-        elif data['action'] == 'addButton':
+        elif data['action'] == 'itemAdded':
+            # Get new item name
+            item_name = data.get('itemName')
             # Prepare the insert row statement
             insert_stmt = f'''
             INSERT INTO {PACKLIST} (item, quantity, category, luggage, packed)
@@ -134,7 +159,7 @@ def index():
 
             # Execute the statement
             g.db.execute(insert_stmt, (
-                    'Item',
+                    item_name,
                     1,
                     'Essentials',  # TMP
                     'Red suitcase',  # TMP
@@ -160,7 +185,7 @@ def index():
     g.db.execute(f'SELECT * FROM {PACKLIST} WHERE packed=1;')
     # Count checked items
     checked = len(g.db.fetchall())
-    
+
     # Get the column names ("db.description" provides the column names
     # of the last select query as a list of tuples where the first item
     # is the column name)
@@ -176,10 +201,14 @@ def index():
             i += 1
         rows.append(tmp_dict)
         
-    return render_template('index.html', column_names=column_names, checked=checked, rows=rows)
+    return render_template('index.html',
+                           column_names=column_names,
+                           checked=checked,
+                           rows=rows)
 
-@app.route('/get_data', methods=['GET'])
-def get_data():
+# Get table data from database to update web app
+@app.route('/get_table_data', methods=['GET'])
+def get_table_data():
     conn = sqlite3.connect(f'{DB_NAME}.db')
     c = conn.cursor()
     c.execute(f'SELECT * FROM {PACKLIST}')
@@ -191,10 +220,20 @@ def get_data():
     rows = c.fetchall()
     conn.close()
     
+    # Get all categories
+    g.db.execute(f'SELECT * FROM {CATLIST};')
+    # Fetch all rows returned by the last query result
+    categories = [cat[0] for cat in g.db.fetchall()]
+    
     # Combine headers and rows into a list of dictionaries.
     # Each dictionary is a row, where each key is the header
     # and each value is the cell data.
     data = [dict(zip(headers, row)) for row in rows]
+    
+    response = {
+        "data": data,
+        "categories": categories
+    }
 
-    return jsonify(data)
+    return jsonify(response)
  
