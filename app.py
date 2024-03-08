@@ -153,7 +153,7 @@ def index():
             # Prepare the insert row statement
             insert_stmt = f'''
             INSERT INTO {PACKLIST} (item, quantity, category, luggage, packed)
-            VALUES(?, ?, ?, ?, ?)
+            VALUES(?, ?, ?, ?, ?);
             '''
             # Execute the statement
             g.db.execute(insert_stmt, (
@@ -170,6 +170,30 @@ def index():
         
             print('Added row')
             return jsonify('Table update source: add button')
+        # Category changed action
+        elif data['action'] == 'category_changed':
+            try:
+                data = request.get_json()
+                id_val = data.get('id')
+                cat_val = data.get('category')
+                
+                # Update selected category in the database
+                g.db.execute(
+                    f'''
+                    UPDATE {PACKLIST}
+                    SET category = ?
+                    WHERE id = ?;
+                    ''',
+                    (cat_val,
+                    id_val)
+                )
+                
+                # Commit the changes to the database
+                g.conn.commit()
+                
+                return jsonify({'message': 'Data received successfully (category change)'})
+            except Exception as e:
+                return jsonify({'error': str(e)})
 
     # Handle GET request
     # ==================
@@ -230,9 +254,24 @@ def get_table_data():
     rows_dict = [dict(zip(headers, row)) for row in rows]
     
     response = {
-        "rows": rows_dict,
-        "categories": categories
+        'rows': rows_dict,
+        'categories': categories
     }
 
     return jsonify(response)
- 
+
+# # Update category change for packing list item
+# @app.route('/category_change', methods=['POST'])
+# def category_change():
+#     try:
+#         data = request.get_json()
+#         id_value = data.get('id')
+#         cat_val = data.get('category')
+        
+#         ########################
+#         # MAKE DB CHANGES HERE
+#         ########################
+        
+#         return jsonify({'message': 'Data received successfully (category change)'})
+#     except Exception as e:
+#         return jsonify({'error': str(e)})

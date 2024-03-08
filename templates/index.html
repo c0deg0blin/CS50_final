@@ -11,7 +11,7 @@ Main
     <h1 style="display: inline" id="checkedCount"></h1>
         <h1 style="display: inline">/</h1>
         <h1 style="display: inline" id="allCheckboxes"></h1>
-    <table>
+    <table id="TripPacker_table">
         <thead>
             <tr>
                 {% for column_name in column_names %}
@@ -78,7 +78,7 @@ Main
             // Update the checked count on the page
             updateCheckedCount();
         });
-
+        
         function updateTable() {
             // Get a list of the table headers
             var headers = $("thead th").map(function() {
@@ -114,16 +114,13 @@ Main
                                 $("<td>").append(input).appendTo(tr);
                             } else if (header.toLowerCase() == "category") {
                                 // Create a <select> element
-                                // var select = $("select").addClass("category-select");
-                                var select = $("<select>").addClass("category-select");
+                                var select = $("<select>").addClass("cat-sel");
                                 // Populate with category options
                                 $.each(response["categories"], function(cat_idx, category) {
                                     var option = $("<option>").text(category).val(category);
                                     select.append(option);
                                 });
                                 // Set the default value based on the category from the database
-                                // console.log("Current category:");
-                                console.log(row["category"]);
                                 select.val(row["category"]);
                                 $("<td>").append(select).appendTo(tr);
                             } else {
@@ -144,6 +141,42 @@ Main
             });
         }
 
+        // When a different category is changed in any category dropdown
+        const table = document.getElementById("TripPacker_table");
+        // Attach event listener to table
+        table.addEventListener("change", function (event) {
+            const target = event.target;
+            if (target.classList.contains("cat-sel")) {
+                // Find the parent row of the dropdown
+                const parentRow = target.closest("tr");
+                const selected_cat = target.value;
+                if (parentRow) {
+                    // Retrieve the text content from the first cell with class "hidden_col"
+                    const idValue = parentRow.querySelector(".hidden_col").textContent;
+                    console.log('New category "'+ selected_cat +'" selected in row with ID='+ idValue);
+                    fetch("/", {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/json"
+                        },
+                        body: JSON.stringify({
+                            action: "category_changed",
+                            id: idValue,
+                            category: selected_cat
+                        }),
+                    })
+                    .then((response) => response.json)
+                    .then((data) => {
+                        // Handle the response from the server (if needed)
+                        console.log("Server response:", data);
+                    })
+                    .catch((error) => {
+                        console.error("Error sending data:", error);
+                    });
+                }
+            }
+        });
+
         // When the "Add item" button is clicked
         document.getElementById("addButton").addEventListener("click", function() {
             document.getElementById("dialog").style.display = "block";
@@ -155,35 +188,34 @@ Main
 
             if (itemName.trim() != "") {
                 fetch("/", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json"
-                },
-                body: JSON.stringify({
-                    action: "itemAdded",
-                    itemName: itemName
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({
+                        action: "itemAdded",
+                        itemName: itemName
+                    })
                 })
-            })
-            .then(response => {
-                console.log(response);
-                if (!response.ok) {
-                    throw new Error("Network response was not ok");
-                }
-                return response.json();
-            })
-            .then(data => {
-                updateTable();
-            })
-            .then(() => {
-                updateCheckedCount();
-            })
-            .then(() => {
-                console.log("New item added: ", itemName);
-                document.getElementById("dialog").style.display = "none";
-                document.getElementById("itemName").value = "";
-            })
-            .catch(error => console.error("Error:", error));
-
+                .then(response => {
+                    console.log(response);
+                    if (!response.ok) {
+                        throw new Error("Network response was not ok");
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    updateTable();
+                })
+                .then(() => {
+                    updateCheckedCount();
+                })
+                .then(() => {
+                    console.log("New item added: ", itemName);
+                    document.getElementById("dialog").style.display = "none";
+                    document.getElementById("itemName").value = "";
+                })
+                .catch(error => console.error("Error:", error));
             }
         });
         
