@@ -3,7 +3,7 @@
         "item": "Passport",
         "quantity": 1,
         "category": "Essentials",
-        "luggage": "Shoulder bag",
+        "luggage": "Shldr bag",
         "packed": 0
     },
     {
@@ -24,7 +24,7 @@
         "item": "Camera",
         "quantity": 1,
         "category": "Photography",
-        "luggage": "Shoulder bag",
+        "luggage": "Shldr bag",
         "packed": 0
     },
     {
@@ -38,7 +38,14 @@
         "item": "Phone",
         "quantity": 1,
         "category": "Essentials",
-        "luggage": "On person",
+        "luggage": "Shldr bag",
+        "packed": 0
+    },
+    {
+        "item": "Sleeping bag",
+        "quantity": 1,
+        "category": "Essentials",
+        "luggage": "Backpack",
         "packed": 0
     }
 ]

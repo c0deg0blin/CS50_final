@@ -9,9 +9,11 @@ import json
 DB_NAME = 'TripPacker'
 PACKLIST = 'packingList'
 CATLIST = 'categories'
+LUGLIST = 'luggage_opts'
 
 def insert_tmp_data(conn):
     
+    # PACKING LIST
     # Load template packing list from json
     with open('static/packingList_template.json', 'r') as f:
         tmp_packingList = json.load(f)
@@ -37,6 +39,7 @@ def insert_tmp_data(conn):
         
     conn.commit()
     
+    # CATEGORY LIST
     # Load template category list from json
     with open('static/categoryList_template.json', 'r') as f:
         tmp_catList = json.load(f)
@@ -49,6 +52,22 @@ def insert_tmp_data(conn):
     db = conn.cursor()
     for d in tmp_catList:
         db.execute(insert_stmt, (d['category'],))
+        
+    conn.commit()
+
+    # LUGGAGE LIST
+    # Load template luggage list from json
+    with open('static/luggageList_template.json', 'r') as f:
+        tmp_lugList = json.load(f)
+
+    # Prepare the insert statement
+    insert_stmt = f'INSERT INTO {LUGLIST} (luggage) VALUES(?)'
+
+    print('Inserting temp luggage list data...')
+    # Execute the statement for each item
+    db = conn.cursor()
+    for d in tmp_lugList:
+        db.execute(insert_stmt, (d['luggage'],))
         
     conn.commit()
 
@@ -89,6 +108,13 @@ def db_connect(db_name):
             f'''
             CREATE TABLE IF NOT EXISTS {CATLIST} (
                 category TEXT NOT NULL UNIQUE
+            );
+            '''
+        )
+        db.execute(
+            f'''
+            CREATE TABLE IF NOT EXISTS {LUGLIST} (
+                luggage TEXT NOT NULL UNIQUE
             );
             '''
         )
@@ -150,17 +176,29 @@ def index():
         elif data['action'] == 'itemAdded':
             # Get new item name
             item_name = data.get('itemName')
+            # Get first category and luggage options
+            g.db.execute(f'SELECT * FROM {CATLIST} ORDER BY category LIMIT 1;')
+            first_cat = [cat[0] for cat in g.db.fetchall()][0]
+            # first_cat = g.db.fetchall()
+            print('FIRST CATEGORY')
+            print(first_cat)
+            g.db.execute(f'SELECT * FROM {LUGLIST} ORDER BY luggage LIMIT 1;')
+            first_lug = [lug[0] for lug in g.db.fetchall()][0]
+            # first_lug = g.db.fetchall()
+            print('FIRST LUGGAGE')
+            print(first_lug)
             # Prepare the insert row statement
             insert_stmt = f'''
             INSERT INTO {PACKLIST} (item, quantity, category, luggage, packed)
             VALUES(?, ?, ?, ?, ?);
             '''
+            
             # Execute the statement
             g.db.execute(insert_stmt, (
                     item_name,
                     1,
-                    'Essentials',  # TMP
-                    'Red suitcase',  # TMP
+                    first_cat,
+                    first_lug,
                     0
                 )
             )
@@ -168,7 +206,6 @@ def index():
             # Commit the changes to the database
             g.conn.commit()
         
-            print('Added row')
             return jsonify('Table update source: add button')
         # Category changed action
         elif data['action'] == 'category_changed':
@@ -192,6 +229,29 @@ def index():
                 g.conn.commit()
                 
                 return jsonify({'message': 'Data received successfully (category change)'})
+            except Exception as e:
+                return jsonify({'error': str(e)})
+        elif data['action'] == 'luggage_changed':
+            try:
+                data = request.get_json()
+                id_val = data.get('id')
+                lug_val = data.get('luggage')
+                
+                # Update selected category in the database
+                g.db.execute(
+                    f'''
+                    UPDATE {PACKLIST}
+                    SET luggage = ?
+                    WHERE id = ?;
+                    ''',
+                    (lug_val,
+                    id_val)
+                )
+                
+                # Commit the changes to the database
+                g.conn.commit()
+                
+                return jsonify({'message': 'Data received successfully (luggage change)'})
             except Exception as e:
                 return jsonify({'error': str(e)})
 
@@ -244,9 +304,14 @@ def get_table_data():
     conn.close()
     
     # Get all categories
-    g.db.execute(f'SELECT * FROM {CATLIST};')
+    g.db.execute(f'SELECT * FROM {CATLIST} ORDER BY category;')
     # Fetch all rows returned by the last query result
     categories = [cat[0] for cat in g.db.fetchall()]
+    
+    # Get all luggage options
+    g.db.execute(f'SELECT * FROM {LUGLIST} ORDER BY luggage;')
+    # Fetch all rows returned by the last query result
+    luggage_opts = [cat[0] for cat in g.db.fetchall()]
     
     # Combine headers and rows into a list of dictionaries.
     # Each dictionary is a row, where each key is the header
@@ -255,23 +320,8 @@ def get_table_data():
     
     response = {
         'rows': rows_dict,
-        'categories': categories
+        'categories': categories,
+        'luggage_opts': luggage_opts
     }
 
     return jsonify(response)
-
-# # Update category change for packing list item
-# @app.route('/category_change', methods=['POST'])
-# def category_change():
-#     try:
-#         data = request.get_json()
-#         id_value = data.get('id')
-#         cat_val = data.get('category')
-        
-#         ########################
-#         # MAKE DB CHANGES HERE
-#         ########################
-        
-#         return jsonify({'message': 'Data received successfully (category change)'})
-#     except Exception as e:
-#         return jsonify({'error': str(e)})

@@ -123,6 +123,17 @@ Main
                                 // Set the default value based on the category from the database
                                 select.val(row["category"]);
                                 $("<td>").append(select).appendTo(tr);
+                            } else if (header.toLowerCase() == "luggage") {
+                                // Create a <select> element
+                                var select = $("<select>").addClass("lug-sel");
+                                // Populate with luggage options
+                                $.each(response["luggage_opts"], function(cat_idx, luggage) {
+                                    var option = $("<option>").text(luggage).val(luggage);
+                                    select.append(option);
+                                });
+                                // Set the default value based on the luggage from the database
+                                select.val(row["luggage"]);
+                                $("<td>").append(select).appendTo(tr);
                             } else {
                                 // Create a regular cell for other keys
                                 $("<td>").text(row[header]).appendTo(tr);
@@ -141,19 +152,18 @@ Main
             });
         }
 
-        // When a different category is changed in any category dropdown
         const table = document.getElementById("TripPacker_table");
         // Attach event listener to table
         table.addEventListener("change", function (event) {
             const target = event.target;
+            // When a different category is selected in any category dropdown
             if (target.classList.contains("cat-sel")) {
                 // Find the parent row of the dropdown
                 const parentRow = target.closest("tr");
                 const selected_cat = target.value;
                 if (parentRow) {
-                    // Retrieve the text content from the first cell with class "hidden_col"
+                    // Retrieve the id for this row
                     const idValue = parentRow.querySelector(".hidden_col").textContent;
-                    console.log('New category "'+ selected_cat +'" selected in row with ID='+ idValue);
                     fetch("/", {
                         method: "POST",
                         headers: {
@@ -168,10 +178,38 @@ Main
                     .then((response) => response.json)
                     .then((data) => {
                         // Handle the response from the server (if needed)
-                        console.log("Server response:", data);
+                        console.log("Server response (category change):", data);
                     })
                     .catch((error) => {
-                        console.error("Error sending data:", error);
+                        console.error("Error sending data (category change):", error);
+                    });
+                }
+            } else if (target.classList.contains("lug-sel")) {
+                // When a different luggage is selected in any luggage dropdown
+                // Find the parent row of the dropdown
+                const parentRow = target.closest("tr");
+                const selected_lug = target.value;
+                if (parentRow) {
+                    // Retrieve the id for this row
+                    const idValue = parentRow.querySelector(".hidden_col").textContent;
+                    fetch("/", {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/json"
+                        },
+                        body: JSON.stringify({
+                            action: "luggage_changed",
+                            id: idValue,
+                            luggage: selected_lug
+                        }),
+                    })
+                    .then((response) => response.json)
+                    .then((data) => {
+                        // Handle the response from the server (if needed)
+                        console.log("Server response (luggage change):", data);
+                    })
+                    .catch((error) => {
+                        console.error("Error sending data (luggage change):", error);
                     });
                 }
             }
@@ -180,6 +218,10 @@ Main
         // When the "Add item" button is clicked
         document.getElementById("addButton").addEventListener("click", function() {
             document.getElementById("dialog").style.display = "block";
+            // Get the input box by its ID
+            var inputBox = document.getElementById("itemName");
+            // Set focus on the input box
+            inputBox.focus();
         });
         
         // When the "OK" button is clicked in the "Add item" dialog
@@ -218,7 +260,17 @@ Main
                 .catch(error => console.error("Error:", error));
             }
         });
+
+        // When enter is pressed in the add item textbox, run same
+        // action as when clicking the OK button.
+        document.getElementById("itemName").addEventListener("keyup", function(event) {
+            event.preventDefault(); 
+            if (event.keyCode === 13) {
+                document.getElementById("okButton").click();
+            }
+        });
         
+        // When the cancel button is clicked
         document.getElementById("cancelButton").addEventListener("click", function() {
             console.log("Cancelled input of new item");
             document.getElementById("dialog").style.display = "none";
