@@ -108,17 +108,15 @@ Main
                                 // Create a hidden cell for the id
                                 $("<td>").addClass("hidden_col").text(row[header]).appendTo(tr);
                             } else if (header.toLowerCase() == "item") {
-                                var item_input = $("<input>").addClass("item");
+                                // Create an item input element
+                                var item_input = $("<input>").addClass("item-ren");
                                 item_input.val(row["item"]);
                                 $("<td>").append(item_input).appendTo(tr);
-                            } else if (header.toLowerCase() == "packed") {
-                                // Create a checkbox
-                                var input = $("<input>")
-                                    .attr("type", "checkbox")
-                                    .addClass("packed_cb")
-                                    .attr("name", "packed_" + row["id"])
-                                    .prop("checked", row[header] != 0); //Check it if value is not 0
-                                $("<td>").append(input).appendTo(tr);
+                            } else if (header.toLowerCase() == "quantity") {
+                                // Create a quantity input element
+                                var quantity_input = $("<input>").addClass("quantity-mod");
+                                quantity_input.val(row["quantity"]);
+                                $("<td>").append(quantity_input).appendTo(tr);
                             } else if (header.toLowerCase() == "category") {
                                 // Create a <select> element
                                 var select = $("<select>").addClass("cat-sel");
@@ -141,6 +139,14 @@ Main
                                 // Set the default value based on the luggage from the database
                                 select.val(row["luggage"]);
                                 $("<td>").append(select).appendTo(tr);
+                            } else if (header.toLowerCase() == "packed") {
+                                // Create a checkbox
+                                var input = $("<input>")
+                                    .attr("type", "checkbox")
+                                    .addClass("packed_cb")
+                                    .attr("name", "packed_" + row["id"])
+                                    .prop("checked", row[header] != 0); //Check it if value is not 0
+                                $("<td>").append(input).appendTo(tr);
                             } else if (header == "DELETE_BUTTONS") {
                                 // Create a button element
                                 var del_btn = $("<button>").addClass("del-btn");
@@ -214,7 +220,7 @@ Main
                             action: "luggage_changed",
                             id: idValue,
                             luggage: selected_lug
-                        }),
+                        })
                     })
                     .then((response) => response.json)
                     .then((data) => {
@@ -224,6 +230,26 @@ Main
                     .catch((error) => {
                         console.error("Error sending data (luggage change):", error);
                     });
+                }
+            } else if (target.classList.contains("quantity-mod")) {
+                // When a quanity is changed
+                // Find the parent row of the item
+                const parentRow = target.closest("tr");
+                if (parentRow) {
+                    // Retrieve the id for this row
+                    const idValue = parentRow.querySelector(".hidden_col").textContent;
+                    const quantity = target.value;
+                    fetch("/", {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/json"
+                        },
+                        body: JSON.stringify({
+                            action: "quantity_changed",
+                            id: idValue,
+                            quantity: quantity
+                        })
+                    })
                 }
             }
         });

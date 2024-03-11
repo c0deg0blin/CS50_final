@@ -271,6 +271,53 @@ def index():
                 return jsonify({'message': 'Data received successfully (item deletion)'})
             except Exception as e:
                 return jsonify({'error': str(e)})
+        elif data['action'] == 'item_renamed':
+            try:
+                data = request.get_json()
+                id_val = data.get('id')
+                item_name = data.get('item_name')
+                
+                # Rename item in database
+                g.db.execute(
+                    f'''
+                    UPDATE {PACKLIST}
+                    SET item = ?
+                    WHERE id = ?;
+                    ''',
+                    (item_name,
+                     id_val)
+                )
+                
+                # Commit the changes to the database
+                g.conn.commit()
+                
+                return jsonify({'message': 'Data received successfully (item rename)'})
+            except Exception as e:
+                return jsonify({'error': str(e)})
+        elif data['action'] == 'quantity_changed':
+            try:
+                data = request.get_json()
+                id_val = data.get('id')
+                quantity = data.get('quantity')
+                
+                # Change quantity in database
+                g.db.execute(
+                    f'''
+                    UPDATE {PACKLIST}
+                    SET quantity = ?
+                    WHERE id = ?;
+                    ''',
+                    (quantity,
+                     id_val)
+                )
+                
+                # Commit the changes to the database
+                g.conn.commit()
+                
+                return jsonify({'message': 'Data received successfully (item rename)'})
+            except Exception as e:
+                return jsonify({'error': str(e)})
+                
 
     # Handle GET request
     # ==================
