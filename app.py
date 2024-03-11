@@ -10,6 +10,7 @@ DB_NAME = 'TripPacker'
 PACKLIST = 'packingList'
 CATLIST = 'categories'
 LUGLIST = 'luggage_opts'
+DELETE_HEADER = 'DELETE_BUTTONS'
 
 def insert_tmp_data(conn):
     
@@ -272,6 +273,7 @@ def index():
     # of the last select query as a list of tuples where the first item
     # is the column name)
     column_names = [description[0] for description in g.db.description]
+    print(column_names)
     
     # Stores rows as list of dictionaries, for easier management in HTML
     rows = []
@@ -283,6 +285,9 @@ def index():
             i += 1
         rows.append(tmp_dict)
         
+    # Add a column for "delete item" buttons
+    column_names.append(DELETE_HEADER)
+    
     return render_template('index.html',
                            column_names=column_names,
                            checked=checked,
@@ -298,6 +303,9 @@ def get_table_data():
     
     # Get headers
     headers = [column[0] for column in c.description]
+    
+    # Add a column for "delete item" buttons
+    headers.append(DELETE_HEADER)
     
     # Fetch all rows
     rows = c.fetchall()
