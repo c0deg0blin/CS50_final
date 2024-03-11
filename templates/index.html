@@ -161,7 +161,8 @@ Main
         }
 
         const table = document.getElementById("TripPacker_table");
-        // Attach event listener to table
+        
+        // Table event listener to pick up dropdown list changes
         table.addEventListener("change", function (event) {
             const target = event.target;
             // When a different category is selected in any category dropdown
@@ -223,6 +224,40 @@ Main
             }
         });
 
+        // Table event listener to pick up delete button clicks
+        table.addEventListener("click", function (event) {
+            const target = event.target;
+            // When a X (delete item) button is clicked
+        if (target.classList.contains("del-btn")) {
+                // Find the parent row of the buttonm
+                const parentRow = target.closest("tr");
+                if (parentRow) {
+                    // Retrieve the id for this row
+                    const idValue = parentRow.querySelector(".hidden_col").textContent;
+                    fetch("/", {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/json"
+                        },
+                        body: JSON.stringify({
+                            action: "delete_item",
+                            id: idValue
+                        }),
+                    })
+                    .then((response) => response.json)
+                    .then((data) => {
+                        updateTable();
+                        // Handle the response from the server (if needed)
+                        console.log("Server response (item deletion):", data);
+                    })
+                    .catch((error) => {
+                        console.error("Error sending data (item deletion):", error);
+                    });
+                }
+            }
+        });
+
+
         // When the "Add item" button is clicked
         document.getElementById("addButton").addEventListener("click", function() {
             document.getElementById("dialog").style.display = "block";
@@ -248,7 +283,6 @@ Main
                     })
                 })
                 .then(response => {
-                    console.log(response);
                     if (!response.ok) {
                         throw new Error("Network response was not ok");
                     }

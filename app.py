@@ -181,13 +181,9 @@ def index():
             g.db.execute(f'SELECT * FROM {CATLIST} ORDER BY category LIMIT 1;')
             first_cat = [cat[0] for cat in g.db.fetchall()][0]
             # first_cat = g.db.fetchall()
-            print('FIRST CATEGORY')
-            print(first_cat)
             g.db.execute(f'SELECT * FROM {LUGLIST} ORDER BY luggage LIMIT 1;')
             first_lug = [lug[0] for lug in g.db.fetchall()][0]
             # first_lug = g.db.fetchall()
-            print('FIRST LUGGAGE')
-            print(first_lug)
             # Prepare the insert row statement
             insert_stmt = f'''
             INSERT INTO {PACKLIST} (item, quantity, category, luggage, packed)
@@ -255,6 +251,26 @@ def index():
                 return jsonify({'message': 'Data received successfully (luggage change)'})
             except Exception as e:
                 return jsonify({'error': str(e)})
+        elif data['action'] == 'delete_item':
+            try:
+                data = request.get_json()
+                id_val = data.get('id')
+
+                # Delete item from the database
+                g.db.execute(
+                    f'''
+                    DELETE FROM {PACKLIST}
+                    WHERE id = ?;
+                    ''',
+                    (id_val)
+                )
+                
+                # Commit the changes to the database
+                g.conn.commit()
+                
+                return jsonify({'message': 'Data received successfully (item deletion)'})
+            except Exception as e:
+                return jsonify({'error': str(e)})
 
     # Handle GET request
     # ==================
@@ -273,7 +289,6 @@ def index():
     # of the last select query as a list of tuples where the first item
     # is the column name)
     column_names = [description[0] for description in g.db.description]
-    print(column_names)
     
     # Stores rows as list of dictionaries, for easier management in HTML
     rows = []
