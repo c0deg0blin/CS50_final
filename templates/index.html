@@ -107,6 +107,10 @@ Main
                             if (header.toLowerCase() == "id") {
                                 // Create a hidden cell for the id
                                 $("<td>").addClass("hidden_col").text(row[header]).appendTo(tr);
+                            } else if (header.toLowerCase() == "item") {
+                                var item_input = $("<input>").addClass("item");
+                                item_input.val(row["item"]);
+                                $("<td>").append(item_input).appendTo(tr);
                             } else if (header.toLowerCase() == "packed") {
                                 // Create a checkbox
                                 var input = $("<input>")
