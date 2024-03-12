@@ -322,7 +322,7 @@ def index():
     # Handle GET request
     # ==================
     # Get all rows from the table
-    print('GET')
+    print('INDEX: GET')
     g.db.execute(f'SELECT * FROM {PACKLIST};')
     # Fetch all rows returned by the last query result
     row_list = g.db.fetchall()
@@ -356,7 +356,7 @@ def index():
                            rows=rows)
 
 
-# Get table data from database to update web app
+# Get packing list table data from database to update web app
 @app.route('/get_table_data', methods=['GET'])
 def get_table_data():
     conn = sqlite3.connect(f'{DB_NAME}.db')
@@ -395,3 +395,61 @@ def get_table_data():
     }
 
     return jsonify(response)
+
+# Get categories table data from database to update web app
+@app.route('/get_catTable_data', methods=['GET'])
+def get_catTable_data():
+    conn = sqlite3.connect(f'{DB_NAME}.db')
+    c = conn.cursor()
+    c.execute(f'SELECT * FROM {CATLIST}')
+    
+    # Get headers
+    headers = [column[0] for column in c.description]
+    
+    # Add a column for "delete item" buttons
+    headers.append(DELETE_HEADER)
+    
+    # Fetch all rows
+    rows = c.fetchall()
+    conn.close()
+    
+    # Combine headers and rows into a list of dictionaries.
+    # Each dictionary is a row, where each key is the header
+    # and each value is the cell data.
+    rows_dict = [dict(zip(headers, row)) for row in rows]
+    
+    response = {
+        'rows': rows_dict
+    }
+
+    return jsonify(response)
+
+
+@app.route('/categories', methods=["GET"])
+def categories():
+    # Get all rows from the table
+    print('CATEGORIES: GET')
+    g.db.execute(f'SELECT * FROM {CATLIST};')
+    # Fetch all rows returned by the last query result
+    row_list = g.db.fetchall()
+        
+    # Get the column names ("db.description" provides the column names
+    # of the last select query as a list of tuples where the first item
+    # is the column name)
+    column_names = [description[0] for description in g.db.description]
+
+    # Stores rows as list of dictionaries, for easier management in HTML
+    rows = []
+    for row in row_list:
+        i = 0
+        tmp_dict = {}
+        while i < len(column_names):
+            tmp_dict[column_names[i]] = row[i]
+            i += 1
+        rows.append(tmp_dict)
+        
+    # Add a column for "delete item" buttons
+    column_names.append(DELETE_HEADER)    
+    
+    return render_template('categories.html',
+                           column_names=column_names)
