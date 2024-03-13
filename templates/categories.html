@@ -15,7 +15,7 @@ Categories
             <tr>
                 {% for column_name in column_names %}
                     {% if column_name.lower() == "id" %}
-                        <th class="hidden_col">{{ column_name }}</th>
+                        <th class="id_col">{{ column_name }}</th>
                     {% elif column_name == "DELETE_BUTTONS" %}
                         <th hidden>{{ column_name }}</th>
                     {% else %}
@@ -59,7 +59,7 @@ Categories
                     $.each(headers, function(h_idx, header) {
                         if (header.toLowerCase() == "id") {
                             // Create a hidden cell for the id
-                            $("<td>").addClass("hidden_col").text(row[header]).appendTo(tr);
+                            $("<td>").addClass("id_col").text(row[header]).appendTo(tr);
                         } else if (header.toLowerCase() == "category") {
                             // Create a category element
                             var cat_input = $("<input>").addClass("cat-ren");

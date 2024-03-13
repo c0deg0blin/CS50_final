@@ -19,6 +19,8 @@ Main
                 {% for column_name in column_names %}
                     {% if column_name.lower() == "id" %}
                         <th class="id_col hidden_col">{{ column_name }}</th>
+                    {% elif column_name.lower() == "category_id" %}
+                        <th class="catId_col hidden_col">{{ column_name }}</th>
                     {% elif column_name == "DELETE_BUTTONS" %}
                         <th hidden>{{ column_name }}</th>
                     {% else %}
@@ -108,9 +110,6 @@ Main
                 // Clear the existing table body
                 $("tbody").empty();
 
-                console.log("CATEGORIES:");
-                console.log(response["categories"]);
-
                 // Iterate over each row
                 $.each(response["rows"], function(d_idx, row) {
                     // Create empty row
@@ -131,6 +130,10 @@ Main
                             var quantity_input = $("<input>").addClass("quantity-mod");
                             quantity_input.val(row["quantity"]);
                             $("<td>").append(quantity_input).appendTo(tr);
+                        } else if (header.toLowerCase() == "category_id") {
+                            // Create a hidden cell for the id
+                            var cat_id = $("<td>").addClass("catId_col hidden_col").text(row[header]).appendTo(tr);
+                            cat_id.text("CAT");
                         } else if (header.toLowerCase() == "category") {
                             // Create a <select> element
                             var select = $("<select>").addClass("cat-sel");

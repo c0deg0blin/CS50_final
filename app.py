@@ -105,9 +105,26 @@ def db_connect(db_name):
             );
             '''
         )
+        # db.execute(
+        #     f'''
+        #     CREATE TABLE IF NOT EXISTS {PACKLIST} (
+        #         id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL UNIQUE,
+        #         item TEXT NOT NULL,
+        #         quantity INTEGER NOT NULL,
+        #         category_id INTEGER,
+        #         category TEXT NOT NULL,
+        #         luggage_id INTEGER,
+        #         luggage TEXT NOT NULL,
+        #         packed INTEGER NOT NULL,
+        #         FOREIGN KEY(category_id) REFERENCES {CATLIST}(id),
+        #         FOREIGN KEY(luggage_id) REFERENCES {LUGLIST}(id)
+        #     );
+        #     '''
+        # )
         db.execute(
             f'''
             CREATE TABLE IF NOT EXISTS {CATLIST} (
+                id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL UNIQUE,
                 category TEXT NOT NULL UNIQUE
             );
             '''
@@ -115,6 +132,7 @@ def db_connect(db_name):
         db.execute(
             f'''
             CREATE TABLE IF NOT EXISTS {LUGLIST} (
+                id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL UNIQUE,
                 luggage TEXT NOT NULL UNIQUE
             );
             '''
@@ -374,12 +392,12 @@ def get_table_data():
     conn.close()
     
     # Get all categories
-    g.db.execute(f'SELECT * FROM {CATLIST} ORDER BY category;')
+    g.db.execute(f'SELECT category FROM {CATLIST} ORDER BY category;')
     # Fetch all rows returned by the last query result
     categories = [cat[0] for cat in g.db.fetchall()]
     
     # Get all luggage options
-    g.db.execute(f'SELECT * FROM {LUGLIST} ORDER BY luggage;')
+    g.db.execute(f'SELECT luggage FROM {LUGLIST} ORDER BY luggage;')
     # Fetch all rows returned by the last query result
     luggage_opts = [cat[0] for cat in g.db.fetchall()]
     
