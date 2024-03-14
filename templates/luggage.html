@@ -1,21 +1,22 @@
 {% extends "layout.html" %}
 
 {% block title %}
-Categories
+Luggage
 {% endblock %}
 
 {% block main %}
 <div>
-    <h1 style="display: inline">Categories</h1>
+    <h1 style="display: inline">Luggage</h1>
     <!-- Category counter (STRETCH GOAL) -->
 </div>
 <div>
-    <table id="Categories_table">
+    <table id="Luggage_table">
         <thead>
             <tr>
                 {% for column_name in column_names %}
                     {% if column_name.lower() == "id" %}
                         <th class="id_col hidden_col">{{ column_name }}</th>
+                        <!-- <th class="id_col">{{ column_name }}</th> -->
                     {% elif column_name == "DELETE_BUTTONS" %}
                         <th hidden>{{ column_name }}</th>
                     {% else %}
@@ -33,7 +34,6 @@ Categories
     <!-- Navigation menu -->
     <ul>
         <li><a href="/">Packing list</a></li>
-        <!-- <li><a href="/luggage">Luggage Editor</a></li> -->
     </ul>
 </div>
 
@@ -50,7 +50,7 @@ Categories
         }).get();
 
         $.ajax({
-            url: "/get_catTable_data",
+            url: "/get_lugTable_data",
             type: "GET",
             dataType: "json",
             success: function(response) {
@@ -67,10 +67,11 @@ Categories
                         if (header.toLowerCase() == "id") {
                             // Create a hidden cell for the id
                             $("<td>").addClass("id_col hidden_col").text(row[header]).appendTo(tr);
-                        } else if (header.toLowerCase() == "category") {
-                            // Create a category element
-                            var cat_input = $("<input>").addClass("cat-ren");
-                            cat_input.val(row["category"])
+                            // $("<td>").addClass("id_col").text(row[header]).appendTo(tr);
+                        } else if (header.toLowerCase() == "luggage") {
+                            // Create a luggage element
+                            var cat_input = $("<input>").addClass("lug-ren");
+                            cat_input.val(row["luggage"])
                             $("<td>").append(cat_input).appendTo(tr);
                         }
                     })

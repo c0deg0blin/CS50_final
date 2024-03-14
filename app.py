@@ -201,7 +201,6 @@ def index():
             # first_cat = g.db.fetchall()
             g.db.execute(f'SELECT * FROM {LUGLIST} ORDER BY luggage LIMIT 1;')
             first_lug = [lug[0] for lug in g.db.fetchall()][0]
-            # first_lug = g.db.fetchall()
             # Prepare the insert row statement
             insert_stmt = f'''
             INSERT INTO {PACKLIST} (item, quantity, category, luggage, packed)
@@ -375,8 +374,8 @@ def index():
 
 
 # Get packing list table data from database to update web app
-@app.route('/get_table_data', methods=['GET'])
-def get_table_data():
+@app.route('/get_listTable_data', methods=['GET'])
+def get_listTable_data():
     conn = sqlite3.connect(f'{DB_NAME}.db')
     c = conn.cursor()
     c.execute(f'SELECT * FROM {PACKLIST}')
@@ -391,15 +390,25 @@ def get_table_data():
     rows = c.fetchall()
     conn.close()
     
-    # Get all categories
-    g.db.execute(f'SELECT category FROM {CATLIST} ORDER BY category;')
-    # Fetch all rows returned by the last query result
-    categories = [cat[0] for cat in g.db.fetchall()]
+    # Get categories table
+    g.db.execute(f'SELECT * FROM {CATLIST} ORDER BY category;')
+    # Store categories list of tuples into dictionary
+    cat_dict = dict(g.db.fetchall())
+
+    # Get luggage table
+    g.db.execute(f'SELECT * FROM {LUGLIST} ORDER BY luggage;')
+    # Store luggage list of tuples into dictionary
+    lug_dict = dict(g.db.fetchall())
+
+    # # Get all categories
+    # g.db.execute(f'SELECT category FROM {CATLIST} ORDER BY category;')
+    # # Fetch all rows returned by the last query result
+    # categories = [cat[0] for cat in g.db.fetchall()]
     
-    # Get all luggage options
-    g.db.execute(f'SELECT luggage FROM {LUGLIST} ORDER BY luggage;')
-    # Fetch all rows returned by the last query result
-    luggage_opts = [cat[0] for cat in g.db.fetchall()]
+    # # Get all luggage options
+    # g.db.execute(f'SELECT luggage FROM {LUGLIST} ORDER BY luggage;')
+    # # Fetch all rows returned by the last query result
+    # luggage_opts = [cat[0] for cat in g.db.fetchall()]
     
     # Combine headers and rows into a list of dictionaries.
     # Each dictionary is a row, where each key is the header
@@ -408,8 +417,10 @@ def get_table_data():
     
     response = {
         'rows': rows_dict,
-        'categories': categories,
-        'luggage_opts': luggage_opts
+        'cat_dict': cat_dict,
+        # 'categories': categories,
+        'lug_dict': lug_dict
+        # 'luggage_opts': luggage_opts
     }
 
     return jsonify(response)
@@ -435,6 +446,8 @@ def get_catTable_data():
     # Each dictionary is a row, where each key is the header
     # and each value is the cell data.
     rows_dict = [dict(zip(headers, row)) for row in rows]
+    print("CAT ROWS:")
+    print(rows_dict)
     
     response = {
         'rows': rows_dict
@@ -470,4 +483,68 @@ def categories():
     column_names.append(DELETE_HEADER)    
     
     return render_template('categories.html',
+                           column_names=column_names)
+
+
+# ====================================================
+# ====================================================
+# ====================================================
+# ====================================================
+    
+# Get luggage table data from database to update web app
+@app.route('/get_lugTable_data', methods=['GET'])
+def get_lugTable_data():
+    conn = sqlite3.connect(f'{DB_NAME}.db')
+    c = conn.cursor()
+    c.execute(f'SELECT * FROM {LUGLIST}')
+    
+    # Get headers
+    headers = [column[0] for column in c.description]
+    
+    # Add a column for "delete item" buttons
+    headers.append(DELETE_HEADER)
+    
+    # Fetch all rows
+    rows = c.fetchall()
+    conn.close()
+    
+    # Combine headers and rows into a list of dictionaries.
+    # Each dictionary is a row, where each key is the header
+    # and each value is the cell data.
+    rows_dict = [dict(zip(headers, row)) for row in rows]
+    
+    response = {
+        'rows': rows_dict
+    }
+
+    return jsonify(response)
+
+
+@app.route('/luggage', methods=["GET"])
+def luggage():
+    # Get all rows from the table
+    print('LUGGAGE: GET')
+    g.db.execute(f'SELECT * FROM {LUGLIST};')
+    # Fetch all rows returned by the last query result
+    row_list = g.db.fetchall()
+        
+    # Get the column names ("db.description" provides the column names
+    # of the last select query as a list of tuples where the first item
+    # is the column name)
+    column_names = [description[0] for description in g.db.description]
+
+    # Stores rows as list of dictionaries, for easier management in HTML
+    rows = []
+    for row in row_list:
+        i = 0
+        tmp_dict = {}
+        while i < len(column_names):
+            tmp_dict[column_names[i]] = row[i]
+            i += 1
+        rows.append(tmp_dict)
+        
+    # Add a column for "delete item" buttons
+    column_names.append(DELETE_HEADER)    
+    
+    return render_template('luggage.html',
                            column_names=column_names)
