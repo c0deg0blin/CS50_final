@@ -11,6 +11,7 @@ PACKLIST = 'packingList'
 CATLIST = 'categories'
 LUGLIST = 'luggage_opts'
 DELETE_HEADER = 'DELETE_BUTTONS'
+COLOR_HEADER = 'COLOR'
 
 def insert_tmp_data(conn):
     
@@ -62,13 +63,17 @@ def insert_tmp_data(conn):
         tmp_lugList = json.load(f)
 
     # Prepare the insert statement
-    insert_stmt = f'INSERT INTO {LUGLIST} (luggage) VALUES(?)'
+    insert_stmt = f'INSERT INTO {LUGLIST} (luggage, color) VALUES(?, ?)'
 
     print('Inserting temp luggage list data...')
     # Execute the statement for each item
     db = conn.cursor()
     for d in tmp_lugList:
-        db.execute(insert_stmt, (d['luggage'],))
+        db.execute(insert_stmt, (
+            d['luggage'],
+            d['color'],
+        )
+    )
         
     conn.commit()
 
@@ -105,22 +110,6 @@ def db_connect(db_name):
             );
             '''
         )
-        # db.execute(
-        #     f'''
-        #     CREATE TABLE IF NOT EXISTS {PACKLIST} (
-        #         id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL UNIQUE,
-        #         item TEXT NOT NULL,
-        #         quantity INTEGER NOT NULL,
-        #         category_id INTEGER,
-        #         category TEXT NOT NULL,
-        #         luggage_id INTEGER,
-        #         luggage TEXT NOT NULL,
-        #         packed INTEGER NOT NULL,
-        #         FOREIGN KEY(category_id) REFERENCES {CATLIST}(id),
-        #         FOREIGN KEY(luggage_id) REFERENCES {LUGLIST}(id)
-        #     );
-        #     '''
-        # )
         db.execute(
             f'''
             CREATE TABLE IF NOT EXISTS {CATLIST} (
@@ -133,7 +122,8 @@ def db_connect(db_name):
             f'''
             CREATE TABLE IF NOT EXISTS {LUGLIST} (
                 id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL UNIQUE,
-                luggage TEXT NOT NULL UNIQUE
+                luggage TEXT NOT NULL UNIQUE,
+                color TEXT NOT NULL
             );
             '''
         )
@@ -418,7 +408,7 @@ def get_listTable_data():
     cat_dict = dict(g.db.fetchall())
 
     # Get luggage table
-    g.db.execute(f'SELECT * FROM {LUGLIST} ORDER BY luggage;')
+    g.db.execute(f'SELECT id, luggage FROM {LUGLIST} ORDER BY luggage;')
     # Store luggage list of tuples into dictionary
     lug_dict = dict(g.db.fetchall())
 
@@ -569,6 +559,9 @@ def get_lugTable_data():
     
     # Get headers
     headers = [column[0] for column in c.description]
+
+    # Add a column for colours
+    headers.append(COLOR_HEADER)
     
     # Add a column for "delete item" buttons
     headers.append(DELETE_HEADER)
@@ -598,13 +591,12 @@ def luggage():
         if data['action'] == 'luggageAdded':
             # Get new item name
             luggage_name = data.get('luggageName')
+            color = "#ffffff"
             # Prepare the insert row statement
-            insert_stmt = f'INSERT INTO {LUGLIST} (luggage) VALUES(?);'
-            
-            print(insert_stmt)
-            
+            insert_stmt = f'INSERT INTO {LUGLIST} (luggage, color) VALUES(?, ?);'
+
             # Execute the statement
-            g.db.execute(insert_stmt, (luggage_name,))
+            g.db.execute(insert_stmt, (luggage_name, color))
             
             # Commit the changes to the database
             g.conn.commit()
@@ -655,6 +647,30 @@ def luggage():
                 return jsonify({'message': 'Data received successfully (luggage rename)'})
             except Exception as e:
                 return jsonify({'error': str(e)})
+        # Change color action
+        elif data['action'] == 'color_changed':
+            try:
+                data = request.get_json()
+                id_val = data.get('id')
+                color = data.get('color')
+                
+                # Rename item in database
+                g.db.execute(
+                    f'''
+                    UPDATE {LUGLIST}
+                    SET color = ?
+                    WHERE id = ?;
+                    ''',
+                    (color,
+                     id_val)
+                )
+                
+                # Commit the changes to the database
+                g.conn.commit()
+                
+                return jsonify({'message': 'Data received successfully (color change)'})
+            except Exception as e:
+                return jsonify({'error': str(e)})
     # Handle GET request
     # vvvvvvvvvvvvvvvvvv
     # Get all rows from the table
@@ -678,8 +694,11 @@ def luggage():
             i += 1
         rows.append(tmp_dict)
         
+    # # Add a column for colours
+    # column_names.append(COLOR_HEADER)
+
     # Add a column for "delete luggage" buttons
-    column_names.append(DELETE_HEADER)    
+    column_names.append(DELETE_HEADER)
     
     return render_template('luggage.html',
                            column_names=column_names)

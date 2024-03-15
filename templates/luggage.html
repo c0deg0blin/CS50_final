@@ -83,17 +83,22 @@ Luggage
                         if (header.toLowerCase() == "id") {
                             // Create a hidden cell for the id
                             $("<td>").addClass("id_col hidden_col").text(row[header]).appendTo(tr);
-                            // $("<td>").addClass("id_col").text(row[header]).appendTo(tr);
                         } else if (header.toLowerCase() == "luggage") {
                             // Create a luggage element
                             var lug_input = $("<input>").addClass("lug-ren");
                             lug_input.val(row["luggage"])
                             $("<td>").append(lug_input).appendTo(tr);
-                            } else if (header == "DELETE_BUTTONS") {
-                                // Create a button element
-                                var del_btn = $("<button>").addClass("del-btn");
-                                del_btn.text("X");
-                                $("<td>").append(del_btn).appendTo(tr);
+                        } else if (header.toLowerCase() == "color") {
+                            // Create a color element
+                            var col_input = $("<input>").addClass("col-sel");
+                            col_input.attr("type", "color")
+                            col_input.val(row["color"])
+                            $("<td>").append(col_input).appendTo(tr);
+                        } else if (header == "DELETE_BUTTONS") {
+                            // Create a button element
+                            var del_btn = $("<button>").addClass("del-btn");
+                            del_btn.text("X");
+                            $("<td>").append(del_btn).appendTo(tr);
                         }
                     })
                     // Append row to table
@@ -102,6 +107,7 @@ Luggage
             }
         })
     }
+
     
     // Get reference to table
     const table = document.getElementById("Luggage_table");
@@ -127,6 +133,26 @@ Luggage
                         action: "luggage_renamed",
                         id: idValue,
                         luggage_name: luggage_name
+                    })
+                })
+            }
+        } else if (target.classList.contains("col-sel")) {
+            // When a color is changed
+            // Find the parent row of the item
+            const parentRow = target.closest("tr");
+            if (parentRow) {
+                // Retrieve the id for this row
+                const idValue = parentRow.querySelector(".id_col").textContent;
+                const color = target.value;
+                fetch("/luggage", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({
+                        action: "color_changed",
+                        id: idValue,
+                        color: color
                     })
                 })
             }

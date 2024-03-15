@@ -1,14 +1,18 @@
 [
     {
-        "luggage": "Shldr bag"
+        "luggage": "Shldr bag",
+        "color": "#c72418"
     },
     {
-        "luggage": "Red suitcase"
+        "luggage": "Suitcase",
+        "color": "#c7ad18"
     },
     {
-        "luggage": "Roller bag"
+        "luggage": "Roller bag",
+        "color": "#1898c7"
     },
     {
-        "luggage": "Backpack"
+        "luggage": "Backpack",
+        "color": "#b671e3"
     }
 ]
