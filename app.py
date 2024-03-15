@@ -467,7 +467,7 @@ def get_catTable_data():
 @app.route('/categories', methods=['GET', 'POST'])
 def categories():
     if request.method == 'POST':
-        print('POST');
+        print('POST: CATEGORIES')
         data = request.get_json()
         # Add button action
         if data['action'] == 'categoryAdded':
@@ -491,7 +491,7 @@ def categories():
                 data = request.get_json()
                 id_val = data.get('id')
 
-                # Delete item from the database
+                # Delete category from the database
                 g.db.execute(
                     f'''
                     DELETE FROM {CATLIST}
@@ -530,8 +530,6 @@ def categories():
                 return jsonify({'message': 'Data received successfully (category rename)'})
             except Exception as e:
                 return jsonify({'error': str(e)})
-
-    
     # Handle GET request
     # vvvvvvvvvvvvvvvvvv
     # Get all rows from the table
@@ -555,7 +553,7 @@ def categories():
             i += 1
         rows.append(tmp_dict)
         
-    # Add a column for "delete item" buttons
+    # Add a column for "delete category" buttons
     column_names.append(DELETE_HEADER)    
     
     return render_template('categories.html',
@@ -591,8 +589,74 @@ def get_lugTable_data():
     return jsonify(response)
 
 
-@app.route('/luggage', methods=["GET"])
+@app.route('/luggage', methods=["GET", "POST"])
 def luggage():
+    if request.method == 'POST':
+        print('POST: LUGGAGE')
+        data = request.get_json()
+        # Add button action
+        if data['action'] == 'luggageAdded':
+            # Get new item name
+            luggage_name = data.get('luggageName')
+            # Prepare the insert row statement
+            insert_stmt = f'INSERT INTO {LUGLIST} (luggage) VALUES(?);'
+            
+            print(insert_stmt)
+            
+            # Execute the statement
+            g.db.execute(insert_stmt, (luggage_name,))
+            
+            # Commit the changes to the database
+            g.conn.commit()
+        
+            return jsonify('Table update source: add luggage button')
+        # Delete luggage action
+        elif data['action'] == 'delete_luggage':
+            try:
+                data = request.get_json()
+                id_val = data.get('id')
+
+                # Delete luggage from the database
+                g.db.execute(
+                    f'''
+                    DELETE FROM {LUGLIST}
+                    WHERE id = ?;
+                    ''',
+                    (id_val)
+                )
+                
+                # Commit the changes to the database
+                g.conn.commit()
+                
+                return jsonify({'message': 'Data received successfully (luggage deletion)'})
+            except Exception as e:
+                return jsonify({'error': str(e)})
+        # Rename luggage action
+        elif data['action'] == 'luggage_renamed':
+            try:
+                data = request.get_json()
+                id_val = data.get('id')
+                luggage_name = data.get('luggage_name')
+                
+                # Rename item in database
+                g.db.execute(
+                    f'''
+                    UPDATE {LUGLIST}
+                    SET luggage = ?
+                    WHERE id = ?;
+                    ''',
+                    (luggage_name,
+                     id_val)
+                )
+                
+                # Commit the changes to the database
+                g.conn.commit()
+                
+                return jsonify({'message': 'Data received successfully (luggage rename)'})
+            except Exception as e:
+                return jsonify({'error': str(e)})
+    # Handle GET request
+    # vvvvvvvvvvvvvvvvvv
     # Get all rows from the table
     print('LUGGAGE: GET')
     g.db.execute(f'SELECT * FROM {LUGLIST};')
@@ -614,7 +678,7 @@ def luggage():
             i += 1
         rows.append(tmp_dict)
         
-    # Add a column for "delete item" buttons
+    # Add a column for "delete luggage" buttons
     column_names.append(DELETE_HEADER)    
     
     return render_template('luggage.html',

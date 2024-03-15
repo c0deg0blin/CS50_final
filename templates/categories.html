@@ -30,7 +30,7 @@ Categories
     </table>
 </div>
 <div>
-    <button id="addButton"><strong> Add category </strong></button>
+    <button id="addButton"><strong>Add category</strong></button>
 </div>
 <div id="dialog"
     style="display: none;
@@ -156,10 +156,10 @@ Categories
                 .then((data) => {
                     updateTable();
                     // Handle the response from the server (if needed)
-                    console.log("Server response (item deletion):", data);
+                    console.log("Server response (category deletion):", data);
                 })
                 .catch((error) => {
-                    console.error("Error sending data (item deletion):", error);
+                    console.error("Error sending data (category deletion):", error);
                 });
             }
         }
@@ -207,7 +207,7 @@ Categories
         }
     });
 
-    // When enter is pressed in the add item textbox, run same
+    // When enter is pressed in the add category textbox, run same
     // action as when clicking the OK button.
     document.getElementById("categoryName").addEventListener("keyup", function(event) {
         event.preventDefault(); 
