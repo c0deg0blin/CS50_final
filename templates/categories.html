@@ -30,10 +30,26 @@ Categories
     </table>
 </div>
 <div>
+    <button id="addButton"><strong> Add category </strong></button>
+</div>
+<div id="dialog"
+    style="display: none;
+        position: absolute;
+        top: 0; bottom: 0; left: 0; right: 0;
+        width: 300px; height: 150px;
+        margin: auto;
+        background-color: #f0f0f0;
+        padding: 20px;
+        border-radius: 10px;">
+    <label for="categoryName">Category name:</label>
+    <input style="width: 100%;" type="text" id="categoryName" name="categoryName">
+    <button id="okButton">OK</button>
+    <button id="cancelButton">Cancel</button>
+</div>
+<div>
     <!-- Navigation menu -->
     <ul>
         <li><a href="/">Packing list</a></li>
-        <!-- <li><a href="/luggage">Luggage Editor</a></li> -->
     </ul>
 </div>
 
@@ -72,15 +88,140 @@ Categories
                             var cat_input = $("<input>").addClass("cat-ren");
                             cat_input.val(row["category"])
                             $("<td>").append(cat_input).appendTo(tr);
+                        } else if (header == "DELETE_BUTTONS") {
+                                // Create a button element
+                                var del_btn = $("<button>").addClass("del-btn");
+                                del_btn.text("X");
+                                $("<td>").append(del_btn).appendTo(tr);
                         }
                     })
-
                     // Append row to table
                     $("tbody").append(tr);
                 })
             }
         })
     }
+
+    // Get reference to table
+    const table = document.getElementById("Categories_table");
+
+    // Table event listener to pick up dropdown list changes
+    table.addEventListener("change", function (event) {
+        const target = event.target;
+        // When a different category is selected in any category dropdown
+        if (target.classList.contains("cat-ren")) {
+            // When a category name is changed
+            // Find the parent row of the item
+            const parentRow = target.closest("tr");
+            if (parentRow) {
+                // Retrieve the id for this row
+                const idValue = parentRow.querySelector(".id_col").textContent;
+                const category_name = target.value;
+                fetch("/categories", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({
+                        action: "category_renamed",
+                        id: idValue,
+                        category_name: category_name
+                    })
+                })
+            }
+        }
+    });
+
+    // Table event listener to pick up delete button clicks
+    table.addEventListener("click", function (event) {
+        const target = event.target;
+        // When a X (delete item) button is clicked
+        if (target.classList.contains("del-btn")) {
+            // Find the parent row of the buttonm
+            const parentRow = target.closest("tr");
+            if (parentRow) {
+                // Retrieve the id for this row
+                const idValue = parentRow.querySelector(".id_col").textContent;
+                fetch("/categories", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({
+                        action: "delete_category",
+                        id: idValue
+                    }),
+                })
+                .then((response) => response.json)
+                .then((data) => {
+                    updateTable();
+                    // Handle the response from the server (if needed)
+                    console.log("Server response (item deletion):", data);
+                })
+                .catch((error) => {
+                    console.error("Error sending data (item deletion):", error);
+                });
+            }
+        }
+    });
+
+    // When the "Add category" button is clicked
+    document.getElementById("addButton").addEventListener("click", function() {
+        document.getElementById("dialog").style.display = "block";
+        // Get the input box by its ID
+        var inputBox = document.getElementById("categoryName");
+        // Set focus on the input box
+        inputBox.focus();
+    });
+
+    // When the "OK" button is clicked in the "Add category" dialog
+    document.getElementById("okButton").addEventListener("click", function() {
+        var categoryName = document.getElementById("categoryName").value;
+
+        if (categoryName.trim() != "") {
+            fetch("/categories", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                    action: "categoryAdded",
+                    categoryName: categoryName
+                })
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error("Network response was not ok");
+                }
+                return response.json();
+            })
+            .then(data => {
+                updateTable();
+            })
+            .then(() => {
+                console.log("New item added: ", categoryName);
+                document.getElementById("dialog").style.display = "none";
+                document.getElementById("categoryName").value = "";
+            })
+            .catch(error => console.error("Error:", error));
+        }
+    });
+
+    // When enter is pressed in the add item textbox, run same
+    // action as when clicking the OK button.
+    document.getElementById("categoryName").addEventListener("keyup", function(event) {
+        event.preventDefault(); 
+        if (event.keyCode === 13) {
+            document.getElementById("okButton").click();
+        }
+    });
+    
+    // When the cancel button is clicked
+    document.getElementById("cancelButton").addEventListener("click", function() {
+        console.log("Cancelled input of new item");
+        document.getElementById("dialog").style.display = "none";
+        document.getElementById("categoryName").value = "";
+    });
 </script>
 
 {% endblock %}

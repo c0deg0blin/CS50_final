@@ -188,6 +188,7 @@ Main
         });
     }
 
+    // Get reference to table
     const table = document.getElementById("TripPacker_table");
     
     // Table event listener to pick up dropdown list changes
@@ -248,6 +249,26 @@ Main
                 .catch((error) => {
                     console.error("Error sending data (luggage change):", error);
                 });
+            }
+        } else if (target.classList.contains("item-ren")) {
+            // When an item name is changed
+            // Find the parent row of the item
+            const parentRow = target.closest("tr");
+            if (parentRow) {
+                // Retrieve the id for this row
+                const idValue = parentRow.querySelector(".id_col").textContent;
+                const item_name = target.value;
+                fetch("/", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({
+                        action: "item_renamed",
+                        id: idValue,
+                        item_name: item_name
+                    })
+                })
             }
         } else if (target.classList.contains("quantity-mod")) {
             // When a quanity is changed

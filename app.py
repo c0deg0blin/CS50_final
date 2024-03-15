@@ -198,7 +198,6 @@ def index():
             # Get first category and luggage options
             g.db.execute(f'SELECT * FROM {CATLIST} ORDER BY category LIMIT 1;')
             first_cat = [cat[0] for cat in g.db.fetchall()][0]
-            # first_cat = g.db.fetchall()
             g.db.execute(f'SELECT * FROM {LUGLIST} ORDER BY luggage LIMIT 1;')
             first_lug = [lug[0] for lug in g.db.fetchall()][0]
             # Prepare the insert row statement
@@ -334,10 +333,32 @@ def index():
                 return jsonify({'message': 'Data received successfully (item rename)'})
             except Exception as e:
                 return jsonify({'error': str(e)})
+        elif data['action'] == 'item_renamed':
+            try:
+                data = request.get_json()
+                id_val = data.get('id')
+                item_name = data.get('item_name')
                 
-
+                # Change item name in database
+                g.db.execute(
+                    f'''
+                    UPDATE {PACKLIST}
+                    SET item = ?
+                    WHERE id = ?;
+                    ''',
+                    (item_name,
+                     id_val)
+                )
+                
+                # Commit the changes to the database
+                g.conn.commit()
+                
+                return jsonify({'message': 'Data received successfully (item rename)'})
+            except Exception as e:
+                return jsonify({'error': str(e)})
+                
     # Handle GET request
-    # ==================
+    # vvvvvvvvvvvvvvvvvv
     # Get all rows from the table
     print('INDEX: GET')
     g.db.execute(f'SELECT * FROM {PACKLIST};')
@@ -376,6 +397,7 @@ def index():
 # Get packing list table data from database to update web app
 @app.route('/get_listTable_data', methods=['GET'])
 def get_listTable_data():
+
     conn = sqlite3.connect(f'{DB_NAME}.db')
     c = conn.cursor()
     c.execute(f'SELECT * FROM {PACKLIST}')
@@ -400,16 +422,6 @@ def get_listTable_data():
     # Store luggage list of tuples into dictionary
     lug_dict = dict(g.db.fetchall())
 
-    # # Get all categories
-    # g.db.execute(f'SELECT category FROM {CATLIST} ORDER BY category;')
-    # # Fetch all rows returned by the last query result
-    # categories = [cat[0] for cat in g.db.fetchall()]
-    
-    # # Get all luggage options
-    # g.db.execute(f'SELECT luggage FROM {LUGLIST} ORDER BY luggage;')
-    # # Fetch all rows returned by the last query result
-    # luggage_opts = [cat[0] for cat in g.db.fetchall()]
-    
     # Combine headers and rows into a list of dictionaries.
     # Each dictionary is a row, where each key is the header
     # and each value is the cell data.
@@ -418,12 +430,11 @@ def get_listTable_data():
     response = {
         'rows': rows_dict,
         'cat_dict': cat_dict,
-        # 'categories': categories,
         'lug_dict': lug_dict
-        # 'luggage_opts': luggage_opts
     }
 
     return jsonify(response)
+
 
 # Get categories table data from database to update web app
 @app.route('/get_catTable_data', methods=['GET'])
@@ -446,9 +457,6 @@ def get_catTable_data():
     # Each dictionary is a row, where each key is the header
     # and each value is the cell data.
     rows_dict = [dict(zip(headers, row)) for row in rows]
-    print("CAT ROWS:")
-    print(rows_dict)
-    
     response = {
         'rows': rows_dict
     }
@@ -456,8 +464,76 @@ def get_catTable_data():
     return jsonify(response)
 
 
-@app.route('/categories', methods=["GET"])
+@app.route('/categories', methods=['GET', 'POST'])
 def categories():
+    if request.method == 'POST':
+        print('POST');
+        data = request.get_json()
+        # Add button action
+        if data['action'] == 'categoryAdded':
+            # Get new item name
+            category_name = data.get('categoryName')
+            # Prepare the insert row statement
+            insert_stmt = f'INSERT INTO {CATLIST} (category) VALUES(?);'
+            
+            print(insert_stmt)
+            
+            # Execute the statement
+            g.db.execute(insert_stmt, (category_name,))
+            
+            # Commit the changes to the database
+            g.conn.commit()
+        
+            return jsonify('Table update source: add category button')
+        # Delete category action
+        elif data['action'] == 'delete_category':
+            try:
+                data = request.get_json()
+                id_val = data.get('id')
+
+                # Delete item from the database
+                g.db.execute(
+                    f'''
+                    DELETE FROM {CATLIST}
+                    WHERE id = ?;
+                    ''',
+                    (id_val)
+                )
+                
+                # Commit the changes to the database
+                g.conn.commit()
+                
+                return jsonify({'message': 'Data received successfully (item deletion)'})
+            except Exception as e:
+                return jsonify({'error': str(e)})
+        # Rename category action
+        elif data['action'] == 'category_renamed':
+            try:
+                data = request.get_json()
+                id_val = data.get('id')
+                category_name = data.get('category_name')
+                
+                # Rename item in database
+                g.db.execute(
+                    f'''
+                    UPDATE {CATLIST}
+                    SET category = ?
+                    WHERE id = ?;
+                    ''',
+                    (category_name,
+                     id_val)
+                )
+                
+                # Commit the changes to the database
+                g.conn.commit()
+                
+                return jsonify({'message': 'Data received successfully (category rename)'})
+            except Exception as e:
+                return jsonify({'error': str(e)})
+
+    
+    # Handle GET request
+    # vvvvvvvvvvvvvvvvvv
     # Get all rows from the table
     print('CATEGORIES: GET')
     g.db.execute(f'SELECT * FROM {CATLIST};')
@@ -485,11 +561,6 @@ def categories():
     return render_template('categories.html',
                            column_names=column_names)
 
-
-# ====================================================
-# ====================================================
-# ====================================================
-# ====================================================
     
 # Get luggage table data from database to update web app
 @app.route('/get_lugTable_data', methods=['GET'])
