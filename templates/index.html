@@ -108,9 +108,6 @@ Main
                 // Clear the existing table body
                 $("tbody").empty();
 
-                console.log("CATEGORIES:");
-                console.log(response["categories"]);
-
                 // Iterate over each row
                 $.each(response["rows"], function(d_idx, row) {
                     // Create empty row
@@ -148,14 +145,18 @@ Main
                             // Create a <select> element
                             var select = $("<select>").addClass("lug-sel");
                             // Populate with luggage options
-                            $.each(response["lug_dict"], function(key, luggage) {
+                            $.each(response["lug_dict"], function(key, val) {
                                 var option = $("<option>")
-                                    .text(luggage)
-                                    .attr("value", key);
+                                    .text(val["luggage"])
+                                    .attr("value", key)
+                                    // .attr("col", val["color"]);
                                 select.append(option);
                             });
                             // Set the default value based on the luggage from the database
                             select.val(row["luggage"]);
+                            // Set the color based on selected luggage
+                            row_col = response["lug_dict"][row["luggage"]]["color"];
+                            tr.css("background-color", row_col);
                             $("<td>").append(select).appendTo(tr);
                         } else if (header.toLowerCase() == "packed") {
                             // Create a checkbox
@@ -241,10 +242,12 @@ Main
                         luggage: selected_lug
                     })
                 })
+                // .then((response) => response.json)
                 .then((response) => response.json)
                 .then((data) => {
                     // Handle the response from the server (if needed)
                     console.log("Server response (luggage change):", data);
+                    updateListTable();
                 })
                 .catch((error) => {
                     console.error("Error sending data (luggage change):", error);

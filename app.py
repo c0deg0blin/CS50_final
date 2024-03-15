@@ -195,7 +195,6 @@ def index():
             INSERT INTO {PACKLIST} (item, quantity, category, luggage, packed)
             VALUES(?, ?, ?, ?, ?);
             '''
-            
             # Execute the statement
             g.db.execute(insert_stmt, (
                     item_name,
@@ -240,7 +239,19 @@ def index():
                 id_val = data.get('id')
                 lug_val = data.get('luggage')
                 
-                # Update selected category in the database
+                # Get color for the selected luggage
+                g.db.execute(f"""
+                             SELECT color FROM {LUGLIST}
+                             WHERE id = {id_val}
+                             LIMIT 1;
+                             """
+                            )
+                print("COLOR:")
+                # print(g.db.fetchall()[0][0])
+                lug_color = g.db.fetchall()[0][0]
+                print(lug_color)
+
+                # Update selected luggage in the database
                 g.db.execute(
                     f'''
                     UPDATE {PACKLIST}
@@ -254,7 +265,10 @@ def index():
                 # Commit the changes to the database
                 g.conn.commit()
                 
-                return jsonify({'message': 'Data received successfully (luggage change)'})
+                return jsonify({
+                    'message': 'Data received successfully (luggage change)',
+                    'lug_color': lug_color 
+                })
             except Exception as e:
                 return jsonify({'error': str(e)})
         elif data['action'] == 'delete_item':
@@ -407,11 +421,15 @@ def get_listTable_data():
     # Store categories list of tuples into dictionary
     cat_dict = dict(g.db.fetchall())
 
-    # Get luggage table
-    g.db.execute(f'SELECT id, luggage FROM {LUGLIST} ORDER BY luggage;')
-    # Store luggage list of tuples into dictionary
-    lug_dict = dict(g.db.fetchall())
-
+    # Get luggage data
+    g.db.execute(f'SELECT * FROM {LUGLIST} ORDER BY luggage;')
+    lug_data = g.db.fetchall()
+    # # Store luggage data into dictionary
+    lug_dict = {}
+    for tup in lug_data:
+        id, luggage, color = tup
+        lug_dict[id] = {'luggage': luggage, 'color': color}
+        
     # Combine headers and rows into a list of dictionaries.
     # Each dictionary is a row, where each key is the header
     # and each value is the cell data.
@@ -591,6 +609,7 @@ def luggage():
         if data['action'] == 'luggageAdded':
             # Get new item name
             luggage_name = data.get('luggageName')
+            # Default color = white
             color = "#ffffff"
             # Prepare the insert row statement
             insert_stmt = f'INSERT INTO {LUGLIST} (luggage, color) VALUES(?, ?);'
