@@ -17,13 +17,13 @@ body {
     width: 90%;
 }
 
-.header {
+/* .header {
     background-color: #477bff;
     color: #fff;
     margin-bottom: 2rem;
     padding: 2rem 1rem;
     text-align: center;
-}
+} */
 
 .section {
     padding-bottom: 1rem;
@@ -86,4 +86,8 @@ table th::first-letter {
 /* Hide the entire column */
 .hidden_col {
     display: none;
+}
+
+.sorter {
+    cursor: pointer;
 }

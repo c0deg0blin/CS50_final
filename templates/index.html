@@ -21,8 +21,10 @@ Main
                         <th class="id_col hidden_col">{{ column_name }}</th>
                     {% elif column_name == "DELETE_BUTTONS" %}
                         <th hidden>{{ column_name }}</th>
-                    {% else %}
+                    {% elif column_name == "sort_index" %}
                         <th>{{ column_name }}</th>
+                    {% else %}
+                        <th class="sorter">{{ column_name }}</th>
                     {% endif %}
                 {% endfor %}
             </tr>
@@ -58,9 +60,14 @@ Main
 </div>
 
 <script>
-    // Update the table when the window loads
+    // Get reference to table
+    const table = document.getElementById("TripPacker_table");
+
+    // Wait until the page loads, and then...
     $(document).ready(function() {
+        // Update the table
         updateListTable();
+        // Update the counter
         updateCheckedCount();
     });
 
@@ -103,6 +110,7 @@ Main
         $.ajax({
             url: "/get_listTable_data",
             type: "GET",
+            // data:{ sort_header: sort },
             dataType: "json",
             success: function(response) {
                 // Clear the existing table body
@@ -149,7 +157,6 @@ Main
                                 var option = $("<option>")
                                     .text(val["luggage"])
                                     .attr("value", key)
-                                    // .attr("col", val["color"]);
                                 select.append(option);
                             });
                             // Set the default value based on the luggage from the database
@@ -182,15 +189,13 @@ Main
 
                 // Update the checked count after the table has been updated
                 updateCheckedCount();
+
             },
             error: function(jqXHR, textStatus, errorThrown) {
                 console.error("AJAX error:", textStatus, errorThrown);  // log any AJAX errors
             }
         });
     }
-
-    // Get reference to table
-    const table = document.getElementById("TripPacker_table");
     
     // Table event listener to pick up dropdown list changes
     table.addEventListener("change", function (event) {
@@ -228,9 +233,13 @@ Main
             // Find the parent row of the dropdown
             const parentRow = target.closest("tr");
             const selected_lug = target.value;
+            console.log("SELECTED LUGGAGE:")
+            console.log(selected_lug)
             if (parentRow) {
                 // Retrieve the id for this row
                 const idValue = parentRow.querySelector(".id_col").textContent;
+                console.log("SELECTED ID:")
+                console.log(idValue)
                 fetch("/", {
                     method: "POST",
                     headers: {
@@ -242,7 +251,6 @@ Main
                         luggage: selected_lug
                     })
                 })
-                // .then((response) => response.json)
                 .then((response) => response.json)
                 .then((data) => {
                     // Handle the response from the server (if needed)
@@ -296,12 +304,12 @@ Main
         }
     });
 
-    // Table event listener to pick up delete button clicks
+    // Table event listener to pick up clicks
     table.addEventListener("click", function (event) {
         const target = event.target;
         // When a X (delete item) button is clicked
-    if (target.classList.contains("del-btn")) {
-            // Find the parent row of the buttonm
+        if (target.classList.contains("del-btn")) {
+            // Find the parent row of the button
             const parentRow = target.closest("tr");
             if (parentRow) {
                 // Retrieve the id for this row
@@ -326,9 +334,28 @@ Main
                     console.error("Error sending data (item deletion):", error);
                 });
             }
+        } else if (target.classList.contains("sorter")) {
+            sort_header = target.textContent;
+            fetch("/", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                    action: "sort_table",
+                    sort_header: sort_header
+                }),
+            })
+            .then((response) => response.json)
+            .then((data) => {
+                updateListTable();
+                console.log("Server response (table sort):", data);
+            })
+            .catch((error) => {
+                console.error("Error sending data (table sort):", error);
+            })
         }
     });
-
 
     // When the "Add item" button is clicked
     document.getElementById("addButton").addEventListener("click", function() {
@@ -350,7 +377,7 @@ Main
                     "Content-Type": "application/json"
                 },
                 body: JSON.stringify({
-                    action: "itemAdded",
+                    action: "add_item",
                     itemName: itemName
                 })
             })
@@ -390,8 +417,6 @@ Main
         document.getElementById("dialog").style.display = "none";
         document.getElementById("itemName").value = "";
     });
+
 </script>
 {% endblock %}
-
-
-

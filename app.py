@@ -22,22 +22,26 @@ def insert_tmp_data(conn):
 
     # Prepare the insert statement
     insert_stmt = f'''
-    INSERT INTO {PACKLIST} (item, quantity, category, luggage, packed)
-    VALUES(?, ?, ?, ?, ?)
+    INSERT INTO {PACKLIST} (item, sort_index, quantity, category, luggage, packed)
+    VALUES(?, ?, ?, ?, ?, ?)
     '''
 
     print('Inserting temp packing list data...')
     # Execute the statement for each item
     db = conn.cursor()
+    sort_index = 1
     for d in tmp_packingList:
+        print(d['quantity']+1)
         db.execute(insert_stmt, (
                 d['item'],
+                sort_index,
                 d['quantity'],
                 d['category'],
                 d['luggage'],
                 d['packed'],
             )
         )
+        sort_index += 1
         
     conn.commit()
     
@@ -74,7 +78,6 @@ def insert_tmp_data(conn):
             d['color'],
         )
     )
-        
     conn.commit()
 
 
@@ -102,6 +105,7 @@ def db_connect(db_name):
             f'''
             CREATE TABLE IF NOT EXISTS {PACKLIST} (
                 id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL UNIQUE,
+                sort_index INTEGER NOT NULL,
                 item TEXT NOT NULL,
                 quantity INTEGER NOT NULL,
                 category TEXT NOT NULL,
@@ -127,8 +131,17 @@ def db_connect(db_name):
             );
             '''
         )
+        db.execute(
+            f'''
+            CREATE TABLE IF NOT EXISTS {LUGLIST} (
+                id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL UNIQUE,
+                luggage TEXT NOT NULL UNIQUE,
+                color TEXT NOT NULL
+            );
+            '''
+        )
         
-        # TMP: Pre-populate table for testing purposes
+        # Pre-populate table for testing purposes
         insert_tmp_data(conn)
     
     return conn, db
@@ -156,10 +169,10 @@ def teardown_request(exception):
 @app.route('/', methods=['GET', 'POST'])
 def index():
     if request.method == 'POST':
-        print('POST');
         data = request.get_json()
         # Checkbox action
         if data['action'] == 'checkbox':
+            print('POST action: checkbox')
             id_val = data.get('idValue')
             # Get checkbox state from webapp
             checked_val = data.get('isChecked')
@@ -182,7 +195,8 @@ def index():
         
             return jsonify('Table update source: checkbox')
         # Add button action
-        elif data['action'] == 'itemAdded':
+        elif data['action'] == 'add_item':
+            print('POST action: add_item')
             # Get new item name
             item_name = data.get('itemName')
             # Get first category and luggage options
@@ -190,14 +204,19 @@ def index():
             first_cat = [cat[0] for cat in g.db.fetchall()][0]
             g.db.execute(f'SELECT * FROM {LUGLIST} ORDER BY luggage LIMIT 1;')
             first_lug = [lug[0] for lug in g.db.fetchall()][0]
+            # Get number of items in the list
+            g.db.execute(f'SELECT * FROM {PACKLIST};')
+            last_idx = len(g.db.fetchall())
+            print(f'Insert after index: {last_idx}')
             # Prepare the insert row statement
             insert_stmt = f'''
-            INSERT INTO {PACKLIST} (item, quantity, category, luggage, packed)
-            VALUES(?, ?, ?, ?, ?);
+            INSERT INTO {PACKLIST} (item, sort_index, quantity, category, luggage, packed)
+            VALUES(?, ?, ?, ?, ?, ?);
             '''
             # Execute the statement
             g.db.execute(insert_stmt, (
                     item_name,
+                    (last_idx + 1),
                     1,
                     first_cat,
                     first_lug,
@@ -211,6 +230,7 @@ def index():
             return jsonify('Table update source: add button')
         # Category changed action
         elif data['action'] == 'category_changed':
+            print('POST action: category_changed')
             try:
                 data = request.get_json()
                 id_val = data.get('id')
@@ -234,23 +254,39 @@ def index():
             except Exception as e:
                 return jsonify({'error': str(e)})
         elif data['action'] == 'luggage_changed':
+            print('POST action: luggage_changed')
             try:
                 data = request.get_json()
                 id_val = data.get('id')
                 lug_val = data.get('luggage')
                 
+                print(f'ID value: {id_val}')
+                print(f'Luggage value: {lug_val}')
+                g.db.execute(
+                    f'''
+                    SELECT color FROM {LUGLIST}
+                    WHERE id = {lug_val}
+                    LIMIT 1;
+                    '''
+                )
+                test = g.db.fetchall()
+                print('TEST:')
+                print(test)
                 # Get color for the selected luggage
-                g.db.execute(f"""
-                             SELECT color FROM {LUGLIST}
-                             WHERE id = {id_val}
-                             LIMIT 1;
-                             """
-                            )
-                print("COLOR:")
-                # print(g.db.fetchall()[0][0])
+                g.db.execute(
+                    f'''
+                    SELECT color FROM {LUGLIST}
+                    WHERE id = {lug_val}
+                    LIMIT 1;
+                    '''
+                )
                 lug_color = g.db.fetchall()[0][0]
+                print('COLOR:')
                 print(lug_color)
 
+                # Commit the changes to the database
+                g.conn.commit()
+                
                 # Update selected luggage in the database
                 g.db.execute(
                     f'''
@@ -284,6 +320,31 @@ def index():
                     ''',
                     (id_val)
                 )
+                
+                # Commit the changes to the database
+                g.conn.commit()
+                
+                # Get list of IDS in current order, post deletion
+                g.db.execute(
+                    f'''
+                    SELECT id
+                    FROM {PACKLIST}
+                    ORDER BY sort_index
+                    '''
+                )
+                ids = [id[0] for id in g.db.fetchall()]
+                
+                # Update sort indexes numbering to fill gap from deleted item
+                i = 1
+                for id in ids:
+                    g.db.execute(
+                        f'''
+                        UPDATE {PACKLIST}
+                        SET sort_index = {i}
+                        WHERE id = {id}
+                        '''
+                    )
+                    i += 1
                 
                 # Commit the changes to the database
                 g.conn.commit()
@@ -337,27 +398,64 @@ def index():
                 return jsonify({'message': 'Data received successfully (item rename)'})
             except Exception as e:
                 return jsonify({'error': str(e)})
-        elif data['action'] == 'item_renamed':
+        elif data['action'] == 'sort_table':
             try:
                 data = request.get_json()
-                id_val = data.get('id')
-                item_name = data.get('item_name')
+                action = data.get('action')
+                sort_header = data.get('sort_header')
                 
-                # Change item name in database
+                # Get list of IDS in current order
                 g.db.execute(
                     f'''
-                    UPDATE {PACKLIST}
-                    SET item = ?
-                    WHERE id = ?;
-                    ''',
-                    (item_name,
-                     id_val)
+                    SELECT id
+                    FROM {PACKLIST}
+                    ORDER BY sort_index
+                    '''
                 )
+                unsorted_ids = [id[0] for id in g.db.fetchall()]
+                print('UNSORTED IDS:')
+                print(unsorted_ids)
+                               
+                # Get list of IDs sorted by the given header
+                g.db.execute(
+                    f'''
+                    SELECT id
+                    FROM {PACKLIST}
+                    ORDER BY {sort_header}
+                    '''
+                )
+                sorted_ids = [id[0] for id in g.db.fetchall()]
+                print('SORTED IDS:')
+                print(sorted_ids)
+                
+                # If rows are already ordered for the given header, reverse the order
+                if sorted_ids == unsorted_ids:
+                    g.db.execute(
+                        f'''
+                        SELECT id
+                        FROM {PACKLIST}
+                        ORDER BY {sort_header} DESC
+                        '''
+                    )
+                    sorted_ids = [id[0] for id in g.db.fetchall()]
+ 
+                
+                # Update packing list with new numbering for sort indexes
+                i = 1
+                for id in sorted_ids:
+                    g.db.execute(
+                        f'''
+                        UPDATE {PACKLIST}
+                        SET sort_index = {i}
+                        WHERE id = {id}
+                        '''
+                    )
+                    i += 1
                 
                 # Commit the changes to the database
                 g.conn.commit()
                 
-                return jsonify({'message': 'Data received successfully (item rename)'})
+                return jsonify({'message': 'Data received successfully (table sort)'})
             except Exception as e:
                 return jsonify({'error': str(e)})
                 
@@ -404,7 +502,11 @@ def get_listTable_data():
 
     conn = sqlite3.connect(f'{DB_NAME}.db')
     c = conn.cursor()
-    c.execute(f'SELECT * FROM {PACKLIST}')
+
+    # Get sorting parameter
+    # sort_header = request.args.get('sort_header')
+    # c.execute(f'SELECT * FROM {PACKLIST} ORDER BY {sort_header}')
+    c.execute(f'SELECT * FROM {PACKLIST} ORDER BY sort_index')
     
     # Get headers
     headers = [column[0] for column in c.description]
