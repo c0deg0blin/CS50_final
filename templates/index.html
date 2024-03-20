@@ -22,7 +22,7 @@ Main
                     {% elif column_name == "DELETE_BUTTONS" %}
                         <th hidden>{{ column_name }}</th>
                     {% elif column_name == "sort_index" %}
-                        <th>{{ column_name }}</th>
+                        <th hidden>{{ column_name }}</th>
                     {% else %}
                         <th class="sorter">{{ column_name }}</th>
                     {% endif %}
@@ -51,6 +51,7 @@ Main
     <button id="okButton">OK</button>
     <button id="cancelButton">Cancel</button>
 </div>
+<hr>
 <div>
     <!-- Navigation menu -->
     <ul>
@@ -110,7 +111,6 @@ Main
         $.ajax({
             url: "/get_listTable_data",
             type: "GET",
-            // data:{ sort_header: sort },
             dataType: "json",
             success: function(response) {
                 // Clear the existing table body
@@ -126,6 +126,9 @@ Main
                         if (header.toLowerCase() == "id") {
                             // Create a hidden cell for the id
                             $("<td>").addClass("id_col hidden_col").text(row[header]).appendTo(tr);
+                        } else if (header.toLowerCase() == "sort_index") {
+                            // Create a hidden cell for the sort index
+                            $("<td>").addClass("hidden_col").text(row[header]).appendTo(tr);
                         } else if (header.toLowerCase() == "item") {
                             // Create an item input element
                             var item_input = $("<input>").addClass("item-ren");
@@ -171,13 +174,22 @@ Main
                                 .attr("type", "checkbox")
                                 .addClass("packed_cb")
                                 .attr("name", "packed_" + row["id"])
-                                .prop("checked", row[header] != 0); //Check it if value is not 0
-                            $("<td>").append(input).appendTo(tr);
+                                .prop("checked", row[header] != 0) //Check it if value is not 0
+                                .css("scale", "2.0");
+                            $("<td>")
+                                .addClass("centered_cell")
+                                .width("50px")
+                                .append(input)
+                                .appendTo(tr);
                         } else if (header == "DELETE_BUTTONS") {
-                            // Create a button element
+                            // Create a delete button element
                             var del_btn = $("<button>").addClass("del-btn");
                             del_btn.text("X");
-                            $("<td>").append(del_btn).appendTo(tr);
+                            $("<td>")
+                                .addClass("centered_cell")
+                                .width("30px")
+                                .append(del_btn)
+                                .appendTo(tr);
                         } else {
                             // Create a regular cell for other keys
                             $("<td>").text(row[header]).appendTo(tr);

@@ -47,6 +47,7 @@ Categories
     <button id="okButton">OK</button>
     <button id="cancelButton">Cancel</button>
 </div>
+<hr>
 <div>
     <!-- Navigation menu -->
     <ul>
@@ -90,10 +91,14 @@ Categories
                             cat_input.val(row["category"])
                             $("<td>").append(cat_input).appendTo(tr);
                         } else if (header == "DELETE_BUTTONS") {
-                                // Create a button element
+                                // Create a delete button element
                                 var del_btn = $("<button>").addClass("del-btn");
                                 del_btn.text("X");
-                                $("<td>").append(del_btn).appendTo(tr);
+                                $("<td>")
+                                    .addClass("centered_cell")
+                                    .width("30px")
+                                    .append(del_btn)
+                                    .appendTo(tr);
                         }
                     })
                     // Append row to table
@@ -186,7 +191,7 @@ Categories
                     "Content-Type": "application/json"
                 },
                 body: JSON.stringify({
-                    action: "categoryAdded",
+                    action: "category_added",
                     categoryName: categoryName
                 })
             })

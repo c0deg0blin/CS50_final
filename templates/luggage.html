@@ -46,6 +46,7 @@ Luggage
     <button id="okButton">OK</button>
     <button id="cancelButton">Cancel</button>
 </div>
+<hr>
 <div>
     <!-- Navigation menu -->
     <ul>
@@ -90,15 +91,27 @@ Luggage
                             $("<td>").append(lug_input).appendTo(tr);
                         } else if (header.toLowerCase() == "color") {
                             // Create a color element
-                            var col_input = $("<input>").addClass("col-sel");
-                            col_input.attr("type", "color")
-                            col_input.val(row["color"])
-                            $("<td>").append(col_input).appendTo(tr);
+                            var col_input = $("<input>")
+                            .addClass("col-sel")
+                            .attr("type", "color")
+                            .val(row["color"]);
+                            // col_input.attr("type", "color")
+                            // col_input.val(row["color"])
+                            $("<td>")
+                                .addClass("centered_cell")
+                                .width("50px")
+                                .append(col_input)
+                                .appendTo(tr);
+                            // $("<td>").append(col_input).appendTo(tr);
                         } else if (header == "DELETE_BUTTONS") {
-                            // Create a button element
+                            // Create a delete button element
                             var del_btn = $("<button>").addClass("del-btn");
                             del_btn.text("X");
-                            $("<td>").append(del_btn).appendTo(tr);
+                            $("<td>")
+                                .addClass("centered_cell")
+                                .width("30px")
+                                .append(del_btn)
+                                .appendTo(tr);
                         }
                     })
                     // Append row to table

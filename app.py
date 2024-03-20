@@ -1,4 +1,3 @@
-
 import os
 # from cs50 import SQL
 import sqlite3
@@ -13,12 +12,12 @@ LUGLIST = 'luggage_opts'
 DELETE_HEADER = 'DELETE_BUTTONS'
 COLOR_HEADER = 'COLOR'
 
-def insert_tmp_data(conn):
+def insert_def_data(conn):
     
     # PACKING LIST
     # Load template packing list from json
     with open('static/packingList_template.json', 'r') as f:
-        tmp_packingList = json.load(f)
+        def_packingList = json.load(f)
 
     # Prepare the insert statement
     insert_stmt = f'''
@@ -26,12 +25,11 @@ def insert_tmp_data(conn):
     VALUES(?, ?, ?, ?, ?, ?)
     '''
 
-    print('Inserting temp packing list data...')
+    print('Inserting default packing list data...')
     # Execute the statement for each item
     db = conn.cursor()
     sort_index = 1
-    for d in tmp_packingList:
-        print(d['quantity']+1)
+    for d in def_packingList:
         db.execute(insert_stmt, (
                 d['item'],
                 sort_index,
@@ -142,7 +140,7 @@ def db_connect(db_name):
         )
         
         # Pre-populate table for testing purposes
-        insert_tmp_data(conn)
+        insert_def_data(conn)
     
     return conn, db
 
@@ -207,7 +205,6 @@ def index():
             # Get number of items in the list
             g.db.execute(f'SELECT * FROM {PACKLIST};')
             last_idx = len(g.db.fetchall())
-            print(f'Insert after index: {last_idx}')
             # Prepare the insert row statement
             insert_stmt = f'''
             INSERT INTO {PACKLIST} (item, sort_index, quantity, category, luggage, packed)
@@ -260,18 +257,6 @@ def index():
                 id_val = data.get('id')
                 lug_val = data.get('luggage')
                 
-                print(f'ID value: {id_val}')
-                print(f'Luggage value: {lug_val}')
-                g.db.execute(
-                    f'''
-                    SELECT color FROM {LUGLIST}
-                    WHERE id = {lug_val}
-                    LIMIT 1;
-                    '''
-                )
-                test = g.db.fetchall()
-                print('TEST:')
-                print(test)
                 # Get color for the selected luggage
                 g.db.execute(
                     f'''
@@ -281,11 +266,6 @@ def index():
                     '''
                 )
                 lug_color = g.db.fetchall()[0][0]
-                print('COLOR:')
-                print(lug_color)
-
-                # Commit the changes to the database
-                g.conn.commit()
                 
                 # Update selected luggage in the database
                 g.db.execute(
@@ -413,8 +393,6 @@ def index():
                     '''
                 )
                 unsorted_ids = [id[0] for id in g.db.fetchall()]
-                print('UNSORTED IDS:')
-                print(unsorted_ids)
                                
                 # Get list of IDs sorted by the given header
                 g.db.execute(
@@ -425,8 +403,6 @@ def index():
                     '''
                 )
                 sorted_ids = [id[0] for id in g.db.fetchall()]
-                print('SORTED IDS:')
-                print(sorted_ids)
                 
                 # If rows are already ordered for the given header, reverse the order
                 if sorted_ids == unsorted_ids:
@@ -556,7 +532,7 @@ def get_catTable_data():
     # Get headers
     headers = [column[0] for column in c.description]
     
-    # Add a column for "delete item" buttons
+    # Add a column for "delete category" buttons
     headers.append(DELETE_HEADER)
     
     # Fetch all rows
@@ -580,40 +556,69 @@ def categories():
         print('POST: CATEGORIES')
         data = request.get_json()
         # Add button action
-        if data['action'] == 'categoryAdded':
-            # Get new item name
-            category_name = data.get('categoryName')
-            # Prepare the insert row statement
-            insert_stmt = f'INSERT INTO {CATLIST} (category) VALUES(?);'
-            
-            print(insert_stmt)
-            
-            # Execute the statement
-            g.db.execute(insert_stmt, (category_name,))
-            
-            # Commit the changes to the database
-            g.conn.commit()
-        
-            return jsonify('Table update source: add category button')
-        # Delete category action
-        elif data['action'] == 'delete_category':
+        if data['action'] == 'category_added':
             try:
-                data = request.get_json()
-                id_val = data.get('id')
+                # Get new item name
+                category_name = data.get('categoryName')
+                # Prepare the insert row statement
+                insert_stmt = f'INSERT INTO {CATLIST} (category) VALUES(?);'
 
-                # Delete category from the database
-                g.db.execute(
-                    f'''
-                    DELETE FROM {CATLIST}
-                    WHERE id = ?;
-                    ''',
-                    (id_val)
-                )
+                # Execute the statement
+                g.db.execute(insert_stmt, (category_name,))
                 
                 # Commit the changes to the database
                 g.conn.commit()
+            
+                return jsonify({'message': 'Data received successfully (category added)'})
+            except Exception as e:
+                return jsonify({'error': str(e)})
+        # Delete category action
+        elif data['action'] == 'delete_category':
+            try:
+                # Check how many categories are left
+                g.db.execute(f'SELECT * FROM {CATLIST};')
+                cats_left = len(g.db.fetchall())
                 
-                return jsonify({'message': 'Data received successfully (item deletion)'})
+                # Delete only if more than one category is left
+                if cats_left > 1:
+                    data = request.get_json()
+                    id_val = int(data.get('id'))
+                    
+                    # Get first category which will remain after deletion
+                    g.db.execute(f'SELECT id FROM {CATLIST} ORDER BY id;')
+                    cat_ids = [id[0] for id in g.db.fetchall()]
+                    transfer_id = -1
+                    for cat_id in cat_ids:
+                        if cat_id != id_val:
+                            transfer_id = cat_id
+                            break
+                        
+                    # Transfer item to the other category
+                    g.db.execute(
+                        f'''
+                        UPDATE {PACKLIST}
+                        SET category = {transfer_id}
+                        WHERE category = {id_val};
+                        '''
+                    )
+                    g.conn.commit()
+                    print('Reassigned all items from category to be deleted')
+                                            
+                    # Delete category from the database
+                    g.db.execute(
+                        f'''
+                        DELETE FROM {CATLIST}
+                        WHERE id = {id_val};
+                        '''
+                    )
+                    g.conn.commit()
+                    print('Category deleted')
+
+                    return jsonify({'message': 'Data received successfully (category deletion)'})
+                else:
+                    print('Warning: At least one category must exist')
+                    return jsonify({'warning': 'At least one category must exist'})
+                    
             except Exception as e:
                 return jsonify({'error': str(e)})
         # Rename category action
@@ -683,7 +688,7 @@ def get_lugTable_data():
     # Add a column for colours
     headers.append(COLOR_HEADER)
     
-    # Add a column for "delete item" buttons
+    # Add a column for "delete luggage" buttons
     headers.append(DELETE_HEADER)
     
     # Fetch all rows
@@ -722,29 +727,58 @@ def luggage():
             # Commit the changes to the database
             g.conn.commit()
         
-            return jsonify('Table update source: add luggage button')
+            return jsonify({'message': 'Data received successfully (luggage added)'})
+
         # Delete luggage action
         elif data['action'] == 'delete_luggage':
             try:
-                data = request.get_json()
-                id_val = data.get('id')
+                # Check how many luggage options are left
+                g.db.execute(f'SELECT * FROM {LUGLIST};')
+                lugs_left = len(g.db.fetchall())
+                
+                # Delete only if more than one luggage option is left
+                if lugs_left > 1:
+                    data = request.get_json()
+                    id_val = int(data.get('id'))
+                    
+                    # Get first luggage option which will remain after deletion
+                    g.db.execute(f'SELECT id FROM {LUGLIST} ORDER BY id;')
+                    lug_ids = [id[0] for id in g.db.fetchall()]
+                    transfer_id = -1
+                    for lug_id in lug_ids:
+                        if lug_id != id_val:
+                            transfer_id = lug_id
+                            break
 
-                # Delete luggage from the database
-                g.db.execute(
-                    f'''
-                    DELETE FROM {LUGLIST}
-                    WHERE id = ?;
-                    ''',
-                    (id_val)
-                )
-                
-                # Commit the changes to the database
-                g.conn.commit()
-                
-                return jsonify({'message': 'Data received successfully (luggage deletion)'})
+                    # Transfer item to the other luggage option
+                    g.db.execute(
+                        f'''
+                        UPDATE {PACKLIST}
+                        SET luggage = {transfer_id}
+                        WHERE luggage = {id_val};
+                        '''
+                    )
+                    g.conn.commit()
+                    print('Reassigned all items from luggage to be deleted')
+
+                    # Delete luggage from the database
+                    g.db.execute(
+                        f'''
+                        DELETE FROM {LUGLIST}
+                        WHERE id = {id_val};
+                        '''
+                    )
+                    
+                    # Commit the changes to the database
+                    g.conn.commit()
+                    print('Luggage deleted')
+                    
+                    return jsonify({'message': 'Data received successfully (luggage deletion)'})
+                else:
+                    print('Warning: At least one luggage option must exist')
             except Exception as e:
                 return jsonify({'error': str(e)})
-        # Rename luggage action
+            # Rename luggage action
         elif data['action'] == 'luggage_renamed':
             try:
                 data = request.get_json()

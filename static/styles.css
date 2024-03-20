@@ -17,14 +17,6 @@ body {
     width: 90%;
 }
 
-/* .header {
-    background-color: #477bff;
-    color: #fff;
-    margin-bottom: 2rem;
-    padding: 2rem 1rem;
-    text-align: center;
-} */
-
 .section {
     padding-bottom: 1rem;
     padding-left: 2rem;
@@ -73,7 +65,7 @@ table {
 
 table th,
 table td {
-    padding: 0.75rem;
+    padding: 0.25rem;
     vertical-align: middle;
     border: 1px solid black;
 }
@@ -88,6 +80,13 @@ table th::first-letter {
     display: none;
 }
 
+/* Make the cursor change to a pointing hand
+headers of sortable columns */
 .sorter {
     cursor: pointer;
+}
+
+/* Make cells centered */
+.centered_cell {
+    text-align: center;
 }
